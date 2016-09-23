@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="container">
+    <h2>Welcome to the Flask app<h2>
+    <h3>This is the home page for the Flask app<h3>
+  </div>
+
+<h1>Upload an image file</h1>
+	<form action="upload" method="post" enctype="multipart/form-data">
+		<input type="file" name="uploadFile"><br /><br />
+		<input type="submit" value="Upload the Chosen File">
+	</form>
+{% endblock %}
