@@ -8,7 +8,8 @@ import pdb
 import numpy as np
 from PIL import Image
 import imagehash
-
+import time
+import json
 
 from kafka import KafkaProducer
 #kafka_node_dns="http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com"
@@ -18,7 +19,7 @@ kafka_node_dns3='ec2-54-69-1-84.us-west-2.compute.amazonaws.com:9092'
 kafka_node_dns4='ec2-52-35-12-160.us-west-2.compute.amazonaws.com:9092'
 
 #producer = KafkaProducer(bootstrap_servers =  kafka_node_dns + ':9092')
-producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092')
+producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
 
 
 # This is the path to the upload directory
@@ -58,10 +59,13 @@ def upload():
         filename = secure_filename(file.filename)
         # Move the file form the temporal folder to
         # the upload folder we setup
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
         #pdb.set_trace()
-        hashValue=imagehash.phash(Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename)))
-        producer.send('imgSearchRequests', str(hashValue))
+        hashValue=imagehash.phash(Image.open(filepath))
+        jsonToSend={"imgName":filename,"hash":str(hashValue),"time":time.time()}
+        print("json being sent: ",jsonToSend)
+        producer.send('imgSearchRequests', jsonToSend)
         print(hashValue)
         # Redirect the user to the uploaded_file route, which
         # will basicaly show on the browser the uploaded file
