@@ -74,8 +74,11 @@ import imagehash
 
 import pdb
 from kafka import KafkaProducer
+import time
 ##
 hval_table=0 #global rdd
+producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
+   
 
 
 def hamming2(s1, s2):
@@ -111,24 +114,28 @@ hval_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashv
 will resule in
 [u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
 """
+def findClosestMatches (input):
+    #input looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
+    output=json.loads(input[1])
+    print("Here, json input: ", input)
+    targetHashValInt=int(output['hash'],16)
+    #targetHashValInt=int("17e81e97e01fe815",16) #example hash value to try on. Comment this out
+    targetHashValBinStr=format(targetHashValInt,'064b')
+    closestFrames=hval_table.select("hashvalue", "partitionby","videoname",'framenumber').map(lambda j: (j['videoname'],j['framenumber'],calcDist(j,targetHashValBinStr))).takeOrdered(5,key=lambda x: x[2])
+    producer.send('searchReturns', {output:closestFrames})  #fix this, need to figure out what to send back
+    return closestFrames;
+
 def raw_data_tojson (input):
     #input looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
     output=json.loads(input[1])
-    #print("json input: ", input)
-    #print("json output: ", output)
-    #print("json imgName: ", output['imgName'])
-    #print("json hash: ", output['hash'])
-    #hashValueStr=str(hashValue)
-    targetHashValInt=int(output['hash'],16)
-    targetHashValInt=int("17e81e97e01fe815",16)
-    targetHashValBinStr=format(targetHashValInt,'064b')
-    hval_table.select("hashvalue", "partitionby","videoname").filter(lambda x: x['videoname']=='Mission_Impossible_5_MOVIE_CLIP_3_On_the_Plane-ei_Bi_zkoBc.mp4')
-    hval_table.select("hashvalue", "partitionby","videoname").map(lambda j: calcDist(j,targetHashValBinStr)).take(3)
-    hval_table.select("hashvalue", "partitionby","videoname").filter(lambda x: x['videoname']=='Mission_Impossible_5_MOVIE_CLIP_3_On_the_Plane-ei_Bi_zkoBc.mp4').map(lambda j: calcDist(j,targetHashValBinStr)).take(3)
+    print("json input: ", input)
+    print("json output: ", output)
+    print("json imgName: ", output['imgName'])
+    print("json hash: ", output['hash'])
     return output;
 
-
 def main():
+    global hval_table;
     if len(sys.argv) != 3:
         #print("Usage: thisfile.py <zk> <sensor_topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
         print("Usage: thisfile.py <zk> <sensor_topic>")
@@ -141,34 +148,25 @@ def main():
     ssc = StreamingContext(sc, batch_interval)
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
 
+
     #example of what can be done
     hval_table=sc.cassandraTable("vss","hval");
     #a=hval_table.select('videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
+    #a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
     #print(a) #this works
-    a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
-    print(a)
-
-    producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
-    #producer.send('searchReturns', jsonToSend)  #fix this, need to figure out what to send back
 
     zkQuorum, myTopic = sys.argv[1:]
     # Specify all the nodes you are running Kafka on
     kafkaBrokers = {"metadata.broker.list": "52.35.12.160:9092,52.33.155.170:9092,54.69.1.84:9092,52.41.224.1:9092"}
-    
     streamFromKafka = KafkaUtils.createDirectStream(ssc, [myTopic], kafkaBrokers)
-
+    
     print("hi")
-    print(streamFromKafka)
-
-    imageFindRequests = streamFromKafka.map(raw_data_tojson).pprint()
-
-
+    print("stream fm kafka:", streamFromKafka)
+    #doSomething = streamFromKafka.map(raw_data_tojson).pprint() #this works
+    imageFindRequests = streamFromKafka.map(lambda rdd: rdd.map(lambda row: findClosestMatches(row))).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
 
     print("here")
-    #pdb.set_trace()    
-    #Do something with batch_interval and window_length
-    #windowed_user_rate = user_rate_values.groupByKeyAndWindow(window_length, batch_interval).map(lambda x : (x[0], list(x[1]))).map(lambda x: {"user_id": x[0], "timestamp": max(x[1])[0], "sum_rate": costum_add(list(filter_list(x[1])), sum_time_window)})
-    #windowed_user_rate.saveToCassandra("rate_data", "user_sum")
+
 
     ssc.start()
     ssc.awaitTermination()

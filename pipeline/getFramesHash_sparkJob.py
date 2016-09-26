@@ -3,7 +3,7 @@ from pyspark import SparkConf
 import pyspark_cassandra
 import time
 
-conf = SparkConf().setAppName("vss")
+conf = SparkConf().setAppName("getFramesHash")
 sc = SparkContext(conf=conf)
 
 #logFile = "YOUR_SPARK_HOME/README.md"  # Should be some file on your system #Question, what the hell is this
@@ -37,6 +37,7 @@ def getFrames(inputFile):
     tempList=[]
     while success:
         frameNum=vidcap.get(1) #gets the frame number
+        frameTime=vidcap.get(0)/1000 #gets the frame time, in seconds
         if ((frameNum % 5)==0):
             #cv2.imwrite("/home/ubuntu/playground/frame%d.jpg" % frameNum, image)     # save frame as JPEG file. This keeps printing "True for some reason"
             #cv2.imwrite("/home/ubuntu/playground/vid_%s_frame%d.jpg" % (videoNameOnly, frameNum), image)     # save frame as JPEG file. This keeps printing "True for some reason"
@@ -49,7 +50,7 @@ def getFrames(inputFile):
             hammingDistBetweenHexA=sum(c1 != c2 for c1, c2 in zip(s1, s2))
             partitionby=bin(hashValueInt).count("1")
             #stringToOutput="videoName: %s, hashValue: %s, frameNumber: %d" % (videoNameOnly, hashValueStr, frameNum)
-            outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly}
+            outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime}
             tempList.append(outputDict)
             #print(outputDict)
         success,image = vidcap.read()

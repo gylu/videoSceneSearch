@@ -35,6 +35,7 @@ CREATE TABLE hval (
 	hashvalue text,
 	videoname text,
 	framenumber int,
+	frametime float,
 	PRIMARY KEY (partitionby, hashvalue)
 ) WITH CLUSTERING ORDER BY (hashvalue ASC);
 
