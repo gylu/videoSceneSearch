@@ -43,7 +43,7 @@ def home():
 @app.route('/about')
 def about():
 	title="VSS"
-	message="Made as demo for project Insight Data Engineering!"
+	message="work in progress..."
 	return render_template('about.html', title=title, message=message)
 
 
@@ -66,10 +66,13 @@ def upload():
         jsonToSend={"imgName":filename,"hash":str(hashValue),"time":time.time()}
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
+        #keep pinging until get result
+        
         print(hashValue)
         # Redirect the user to the uploaded_file route, which
         # will basicaly show on the browser the uploaded file
-        return redirect(url_for('get_uploadedFile', filename=filename))
+        return render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
+        #return redirect(url_for('get_uploadedFile', filename=filename))
 
 # This route is expecting a parameter containing the name
 # of a file. Then it will locate that file on the upload

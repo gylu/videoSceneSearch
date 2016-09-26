@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+  
+{% block content %}
+	<div>
+		The following was sent over to the server for processing:
+		<p> {{jsonSent}}</p>
+	</div>
+
+	<div>
+		Below are the results:
+		{{message}}
+	</div>
+{% endblock %}

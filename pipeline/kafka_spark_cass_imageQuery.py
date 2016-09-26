@@ -2,7 +2,7 @@
 """
 The plan:
 1. Read RDD from cassandra
-2. Search for top 3 matches closest to targetImage
+2. Search for top 3 matches closest to target image
 3. Pull entire video that each match belongs to
 4. Calculate distance on each frame on the video
 5. Plot distance vs time
@@ -13,7 +13,9 @@ Do I query cassandra through CQL?
 Do I query cassandra through python?
 Or do I get spark to read the cassandra as an RDD first, and then query through spark?
 
-is it at all possible to write 
+how do i access one rdd from another?
+how do i push the data back to flask, back to the client end?
+what's up with the casandra errors when I start this guy?
 """
 
 
@@ -71,9 +73,9 @@ from PIL import Image
 import imagehash
 
 import pdb
-
+from kafka import KafkaProducer
 ##
-
+hval_table=0 #global rdd
 
 
 def hamming2(s1, s2):
@@ -84,20 +86,45 @@ def hamming2(s1, s2):
 #conf = SparkConf().setAppName("vss")
 #sc = SparkContext(conf=conf)
 
-#targetImage = "/path/to/target/image"
-#hashValue=imagehash.phash(Image.fromarray(targetImage)) #Note: Image.read wasn't working, so instead using Image.fromarray. http://stackoverflow.com/questions/22906394/numpy-ndarray-object-has-no-attribute-read
 #hashValueStr=str(hashValue)
 #hashValueInt=int(hashValueStr,16)
 #hashPrefixStr=hashValueStr[0:6]
 #hashPrefixInt=int(hashPrefixStr,16)
 
+
+def calcDist (rowInFramesDatabase, targetHashValBinStr):
+    hashValfmDatabase=rowInFramesDatabase['hashvalue']
+    hashValfmDatabaseInt=int(hashValfmDatabase,16)
+    hashValfmDatabaseBinStr=format(hashValfmDatabaseInt,'064b')
+    #dist=sum(c1 != c2 for c1, c2 in zip(hashValfmDatabaseBinStr, targetHashValBinStr)) #this doesn't seem to work
+    #return dist
+    compareThese = zip(hashValfmDatabaseBinStr, targetHashValBinStr)
+    distance=0
+    for a,b in compareThese:
+        if a==b:
+            distance=distance+1
+    return distance
+
+"""
+Example usages:
+hval_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashvalue']).take(3)
+will resule in
+[u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
+"""
 def raw_data_tojson (input):
     #input looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
     output=json.loads(input[1])
-    print("json input: ", input)
-    print("json output: ", output)
-    print("json imgName: ", output['imgName'])
-    print("json hash: ", output['hash'])
+    #print("json input: ", input)
+    #print("json output: ", output)
+    #print("json imgName: ", output['imgName'])
+    #print("json hash: ", output['hash'])
+    #hashValueStr=str(hashValue)
+    targetHashValInt=int(output['hash'],16)
+    targetHashValInt=int("17e81e97e01fe815",16)
+    targetHashValBinStr=format(targetHashValInt,'064b')
+    hval_table.select("hashvalue", "partitionby","videoname").filter(lambda x: x['videoname']=='Mission_Impossible_5_MOVIE_CLIP_3_On_the_Plane-ei_Bi_zkoBc.mp4')
+    hval_table.select("hashvalue", "partitionby","videoname").map(lambda j: calcDist(j,targetHashValBinStr)).take(3)
+    hval_table.select("hashvalue", "partitionby","videoname").filter(lambda x: x['videoname']=='Mission_Impossible_5_MOVIE_CLIP_3_On_the_Plane-ei_Bi_zkoBc.mp4').map(lambda j: calcDist(j,targetHashValBinStr)).take(3)
     return output;
 
 
@@ -110,10 +137,19 @@ def main():
     # Kafka and Spark Streaming specific vars
     batch_interval = 3
     window_length = 50
-
-    sc = CassandraSparkContext(appName="PythonStreamingVSS")
+    sc = CassandraSparkContext(appName="PythonStreamingVSS") #http://www.slideshare.net/JonHaddad/intro-to-py-spark-and-cassandra
     ssc = StreamingContext(sc, batch_interval)
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
+
+    #example of what can be done
+    hval_table=sc.cassandraTable("vss","hval");
+    #a=hval_table.select('videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
+    #print(a) #this works
+    a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
+    print(a)
+
+    producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
+    #producer.send('searchReturns', jsonToSend)  #fix this, need to figure out what to send back
 
     zkQuorum, myTopic = sys.argv[1:]
     # Specify all the nodes you are running Kafka on
@@ -124,13 +160,8 @@ def main():
     print("hi")
     print(streamFromKafka)
 
-    doSomething = streamFromKafka.map(raw_data_tojson).pprint()
+    imageFindRequests = streamFromKafka.map(raw_data_tojson).pprint()
 
-    #example of what can be done
-    hval_table=sc.cassandraTable("vss","hval");
-    #a=hval_table.select('videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
-    #print(a) #this works
-    a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
 
 
     print("here")
