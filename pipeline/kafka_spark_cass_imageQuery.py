@@ -33,7 +33,7 @@ TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
-
+#Running on single node
 $SPARK_HOME/bin/spark-submit \
 --executor-memory 2000M \
 --driver-memory 2000M \
@@ -41,6 +41,11 @@ $SPARK_HOME/bin/spark-submit \
 TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+
+#Running spark shell with cassandra
+$SPARK_HOME/bin/pyspark \
+--packages TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1
 """
 
 
@@ -115,24 +120,26 @@ will resule in
 [u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
 """
 def findClosestMatches (input):
-    #input looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
+    global hval_table;
+    #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
     output=json.loads(input[1])
     print("Here, json input: ", input)
     targetHashValInt=int(output['hash'],16)
     #targetHashValInt=int("17e81e97e01fe815",16) #example hash value to try on. Comment this out
     targetHashValBinStr=format(targetHashValInt,'064b')
-    closestFrames=hval_table.select("hashvalue", "partitionby","videoname",'framenumber').map(lambda j: (j['videoname'],j['framenumber'],calcDist(j,targetHashValBinStr))).takeOrdered(5,key=lambda x: x[2])
+    #closestFrames=hval_table.select("hashvalue", "partitionby","videoname",'framenumber').map(lambda j: (j['videoname'],j['framenumber'],calcDist(j,targetHashValBinStr))).takeOrdered(5,key=lambda x: x[2])
+    closestFrames=hval_table.map(lambda j: (j['videoname'],j['framenumber'],calcDist(j,targetHashValBinStr))).takeOrdered(5,key=lambda x: x[2])
     producer.send('searchReturns', {output:closestFrames})  #fix this, need to figure out what to send back
     return closestFrames;
 
 def raw_data_tojson (input):
-    #input looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
+    #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
     output=json.loads(input[1])
     print("json input: ", input)
     print("json output: ", output)
     print("json imgName: ", output['imgName'])
     print("json hash: ", output['hash'])
-    return output;
+    return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 def main():
     global hval_table;
@@ -150,7 +157,8 @@ def main():
 
 
     #example of what can be done
-    hval_table=sc.cassandraTable("vss","hval");
+    #hval_table=sc.cassandraTable("vss","hval") #doesn't work
+    hval_table=sc.cassandraTable("vss","hval").select("hashvalue", "partitionby","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
     #a=hval_table.select('videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
     #a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
     #print(a) #this works
@@ -162,8 +170,26 @@ def main():
     
     print("hi")
     print("stream fm kafka:", streamFromKafka)
-    #doSomething = streamFromKafka.map(raw_data_tojson).pprint() #this works
-    imageFindRequests = streamFromKafka.map(lambda rdd: rdd.map(lambda row: findClosestMatches(row))).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
+    #doSomething = streamFromKafka.map(raw_data_tojson).pprint(4) #this works BUT I DONT KNOW WHY. SEEMS LIKE MAP IS APPLIED DIRECTLY DOWN TO LOWEST FILE? (SKIPPED AN RDD?)
+    #doSomething = streamFromKafka.foreach(raw_data_tojson).pprint() #this DOESNT work, KafkaDStream has no attribute 'foreach'
+    #doSomething = streamFromKafka.foreachRDD(raw_data_tojson) #this DOESNT work. Returns RDDs. Whereas a simple .map maps to all items in RDD
+    #imageFindRequests = streamFromKafka.map(lambda rdd: rdd.map(lambda row: findClosestMatches(row))).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
+    #imageFindRequests = streamFromKafka.map(findClosestMatches).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
+    #imageFindRequests = streamFromKafka.foreachRDD(lambda x: x.foreach(findClosestMatches)) #doesn't work
+
+    #streamFromKafka.map(lambda x: (json.loads(x[1]))).cartesian(hval_table)
+    #hval_table.cartesian(streamFromKafka.map(raw_data_tojson)) #doesn't work
+    #hval_table.cartesian()
+    #hval_table.cartesian()
+
+    #hval_for_join = hval_table.map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable
+    #streamFromKafka.map(raw_data_tojson).map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable("vss", "hval_table", [],['id'])
+    #maybe try this:
+    #hval_table.map(lambda x: (1,x)).join(rdd2.map(lambda x:(1,x))).collect()
+    #hval_table.filter(lambda x:(x['hashvalue']=='038bffff40008af3')).map(lambda x: (1,x)).join(hval_table.filter(lambda x:(x['partitionby']==25)).map(lambda x: (1,x))).collect()
+
+    #resultingTable=streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x)))
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (x,1) ).join(hval_table.map(lambda x: (1,x)))).pprint()
 
     print("here")
 
@@ -173,13 +199,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
-
-
-
-
-
-
-
-
-
