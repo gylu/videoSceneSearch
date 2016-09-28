@@ -222,7 +222,7 @@ def main():
 
 def takeTop(rdd):
     global producer;
-    output= rdd.takeOrdered(3,key=lambda x: (-x['distance']) )
+    output= rdd.takeOrdered(3,key=lambda x: (x['distance']) )
     producer.send('searchReturns',output)
     #return output
 

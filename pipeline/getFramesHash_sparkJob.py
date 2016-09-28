@@ -50,7 +50,8 @@ def getFrames(inputFile):
             hammingDistBetweenHexA=sum(c1 != c2 for c1, c2 in zip(s1, s2))
             partitionby=bin(hashValueInt).count("1")
             #stringToOutput="videoName: %s, hashValue: %s, frameNumber: %d" % (videoNameOnly, hashValueStr, frameNum)
-            outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime}
+            youtubeLink="www.youtube.com/watch?v="+str.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
+            outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
             tempList.append(outputDict)
             #print(outputDict)
         success,image = vidcap.read()

@@ -36,6 +36,7 @@ CREATE TABLE hval (
 	videoname text,
 	framenumber int,
 	frametime float,
+	youtubelink text,
 	PRIMARY KEY (partitionby, hashvalue)
 ) WITH CLUSTERING ORDER BY (hashvalue ASC);
 
@@ -50,6 +51,7 @@ CREATE TABLE vname (
 	videoname text,
 	framenumber int,
 	time timestamp,
+	youtubelink text,
 	PRIMARY KEY (videoname, framenumber, time)
 ) WITH CLUSTERING ORDER BY (framenumber ASC);
 

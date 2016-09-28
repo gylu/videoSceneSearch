@@ -3,4 +3,16 @@
 
 	<h2>If you don't want to upload an image, choose one from below</h2>
 
+
+    {% for imageName in listOfImageNames %}
+    	Here:
+	<form action="runprovided" method="post">
+		<br/>
+			<input type="image" src={{url_for('static', filename='uploads/'+imageName)}} style="width:500px;height:auto;border:5px;" name='uploadFile' value={{imageName}}>
+		<br/>
+		<br/>
+	</form>
+    {% endfor %}
+
+
   </div>

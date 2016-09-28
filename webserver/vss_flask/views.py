@@ -23,9 +23,9 @@ producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.
 
 
 # This is the path to the upload directory
-app.config['UPLOAD_FOLDER'] = 'uploads/'
+app.config['UPLOAD_FOLDER'] = 'vss_flask/static/uploads'
 # These are the extension that we are accepting to be uploaded
-app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'png', 'jpg', 'jpeg', 'gif'])
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -37,14 +37,30 @@ def allowed_file(filename):
 #ec2-52-41-224-1.us-west-2.compute.amazonaws.com:80
 @app.route('/')
 def home():
-	title = "VSS"
-	return render_template('home.html', title=title)
- 
+    title = "VSS"
+    listOfImageNames=os.listdir('./vss_flask/static/uploads')
+    return render_template('home.html', title=title, listOfImageNames=listOfImageNames)
+
+
 @app.route('/about')
 def about():
-	title="VSS"
-	message="work in progress..."
-	return render_template('about.html', title=title, message=message)
+    title="VSS"
+    message="work in progress..."
+    return render_template('about.html', title=title, message=message)
+
+@app.route('/runprovided' , methods=['POST'])
+def runprovided():
+    print('Hello world also!')
+    file=request.form['uploadFile']
+    print("request: ",request)
+    print("file: ",file)
+    filepath=os.path.join(app.config['UPLOAD_FOLDER'], file)
+    print("filepath: ", filepath)
+    hashValue=imagehash.phash(Image.open(filepath))
+    jsonToSend={"imgName":file,"hash":str(hashValue),"time":time.time()}
+    print("json being sent: ",jsonToSend)
+    producer.send('imgSearchRequests', jsonToSend)    
+    return render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
 
 
 # Route that will process the file upload
@@ -67,7 +83,7 @@ def upload():
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
         #keep pinging until get result
-        
+
         print(hashValue)
         # Redirect the user to the uploaded_file route, which
         # will basicaly show on the browser the uploaded file
@@ -78,9 +94,10 @@ def upload():
 # of a file. Then it will locate that file on the upload
 # directory and show it on the browser, so if the user uploads
 # an image, that image is going to be show after the upload
-@app.route('/uploads/<filename>')
-def get_uploadedFile(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+#@app.route('/uploads/<filename>')
+#def get_uploadedFile(filename):
+#    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 # @app.route('/uploads')
