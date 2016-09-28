@@ -26,7 +26,7 @@ Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if ex
 
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-174:7077 \
---executor-memory 2000M \
+--executor-memory 4000M \
 --driver-memory 2000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
 TargetHolding/pyspark-cassandra:0.3.5 \
@@ -113,20 +113,6 @@ def calcDist (rowInFramesDatabase, targetHashValBinStr):
             distance=distance+1
     return distance
 
-def calcDistStr (targetHashStr, databaseRowHashStr):
-    targetHashInt=int(targetHashStr,16)
-    targetHashBinStr=format(targetHashInt,'064b')
-    databaseRowHashInt=int(databaseRowHashStr,16)
-    databaseRowHashBinStr=format(databaseRowHashInt,'064b')   
-    #dist=sum(c1 != c2 for c1, c2 in zip(hashValfmDatabaseBinStr, targetHashValBinStr)) #this doesn't seem to work
-    #return dist
-    compareThese = zip(targetHashBinStr, databaseRowHashBinStr)
-    distance=0
-    for a,b in compareThese:
-        if a==b:
-            distance=distance+1
-    return distance
-
 
 """
 Example usages:
@@ -158,14 +144,14 @@ def raw_data_tojson (input):
 
 def main():
     global hval_table;
+    global producer;
     if len(sys.argv) != 3:
         #print("Usage: thisfile.py <zk> <sensor_topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
         print("Usage: thisfile.py <zk> <sensor_topic>")
         exit(-1)
 
     # Kafka and Spark Streaming specific vars
-    batch_interval = 3
-    window_length = 50
+    batch_interval = 5 #question, why is batch interval of 5 so much better than 3? 3 seemed like needed to wait a long time
     sc = CassandraSparkContext(appName="PythonStreamingVSS") #http://www.slideshare.net/JonHaddad/intro-to-py-spark-and-cassandra
     ssc = StreamingContext(sc, batch_interval)
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
@@ -194,6 +180,7 @@ def main():
     #streamFromKafka.map(raw_data_tojson).map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable("vss", "hval_table", [],['id'])
     streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x))) #AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
     streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x) ).join(hval_table.map(lambda x: (1,x)))).foreach() #AttributeError: 'KafkaTransformedDStream' object has no attribute 'foreach'
+    #streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x))).map(printMe).pprint() #AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
     
     #Breaks due to RDD scope issue
     #imageFindRequests = streamFromKafka.map(lambda rdd: rdd.map(lambda row: findClosestMatches(row))).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
@@ -216,19 +203,50 @@ def main():
     #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x) ).join(hval_table.map(lambda x: (1,x)))).pprint() #this seems to work, 
     #outputs rows of the following:
     #(1, ((None, u'{"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475023909.082745}'), Row(framenumber=135, frametime=5630.625, hashvalue=u'6daab6a32cb6b209', partitionby=42, videoname=u'TERMINATOR_GENISYS_Clip_War_of_the_Machines-vjZDU_WldAw.mp4')))
-    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).pprint() #this seems to work, 
-    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).map(findClosest).pprint() #this seems to work, 
-
-    #streamFromKafka.foreachRDD(lambda rdd: rdd.map(lambda x: (1,x))).join(hval_table.map(lambda x: (1,x)))).map(printMe).pprint() 
-    #streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x))).map(printMe).pprint() #AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
+    
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).pprint() #this seems to work, 
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).map(sendToKafka) #doesn't seem to do anything
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).takeOrdered(5,key=lambda x: x['distance']).take(2) #doesn't work: AttributeError: 'TransformedDStream' object has no attribute 'takeOrdered'
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).pprint() #this works 
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(takeTop) #works once then breaks AttributeError: 'list' object has no attribute '_jrdd'
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x))).map(addDistanceInfo)).transform(takeTop).pprint() #this works... but pprint breaks because it needs an RDD
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x))).map(addDistanceInfo)).foreachRDD(takeTop) #works once then breaks AttributeError: 'list' object has no attribute '_jrdd'
+    
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(lambda x: (x.takeOrdered(5,key=lambda x: x['distance']) )) #can't tell, but takeOrdered outputs a list
+    #streamFromKafka.foreachRDD(lambda rdd: rdd.map(lambda x: (1,x))).join(hval_table.map(lambda x: (1,x)))).map(printMe).pprint()
+    producer.send('searchReturns',"Hello, producer is working. Time is: " + str(time.time()))
     print("here")
-
-
     ssc.start()
     ssc.awaitTermination()
 
-def findClosest(x):
-    distance=calcDistStr(x[1][0][1]['hash'],x[1][1][0]['hashvalue'])
+
+def takeTop(rdd):
+    global producer;
+    output= rdd.takeOrdered(3,key=lambda x: (-x['distance']) )
+    producer.send('searchReturns',output)
+    #return output
+
+
+def addDistanceInfo(x):
+    #x is of the form (1, ({dict in string format},row()) )
+    targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic 
+    #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
+    rowFromDatabase=x[1][1] #this is the row item
+    distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue'])
+    result={'distance':distance, 'imgName':targetImageDict['imgName'], "targethash":targetImageDict['hash'], 'closeFrameHash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}
+    return result
+
+
+def calcDistStr (targetHashStr, databaseRowHashStr):
+    targetHashInt=int(targetHashStr,16)
+    targetHashBinStr=format(targetHashInt,'064b')
+    databaseRowHashInt=int(databaseRowHashStr,16)
+    databaseRowHashBinStr=format(databaseRowHashInt,'064b')   
+    compareThese = zip(targetHashBinStr, databaseRowHashBinStr)
+    distance=64
+    for a,b in compareThese:
+        if a==b:
+            distance=distance-1
     return distance
 
 def printMe(x):
