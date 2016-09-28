@@ -50,7 +50,7 @@ def getFrames(inputFile):
             hammingDistBetweenHexA=sum(c1 != c2 for c1, c2 in zip(s1, s2))
             partitionby=bin(hashValueInt).count("1")
             #stringToOutput="videoName: %s, hashValue: %s, frameNumber: %d" % (videoNameOnly, hashValueStr, frameNum)
-            youtubeLink="www.youtube.com/watch?v="+str.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
+            youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
             outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
             tempList.append(outputDict)
             #print(outputDict)
@@ -76,11 +76,13 @@ rdd.flatMap(getFrames).saveToCassandra("vss","hval")
 """"
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-174:7077 \
---executor-memory 2000M \
+--executor-memory 4000M \
 --driver-memory 2000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
+
+#questions: kept getting this issue: WARN TaskSchedulerImpl: Initial job has not accepted any resources; check your cluster UI to ensure that workers are registered and have sufficient resources
 
 $SPARK_HOME/bin/spark-submit \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \

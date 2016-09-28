@@ -26,10 +26,17 @@ Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if ex
 
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-174:7077 \
+--executor-memory 2000M \
+--driver-memory 2000M \
+--packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1, TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+
+$SPARK_HOME/bin/spark-submit \
+--master spark://ip-172-31-0-174:7077 \
 --executor-memory 4000M \
 --driver-memory 2000M \
---packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
-TargetHolding/pyspark-cassandra:0.3.5 \
+--packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1, TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
