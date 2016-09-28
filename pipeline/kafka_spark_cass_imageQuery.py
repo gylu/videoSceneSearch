@@ -113,6 +113,21 @@ def calcDist (rowInFramesDatabase, targetHashValBinStr):
             distance=distance+1
     return distance
 
+def calcDistStr (targetHashStr, databaseRowHashStr):
+    targetHashInt=int(targetHashStr,16)
+    targetHashBinStr=format(targetHashInt,'064b')
+    databaseRowHashInt=int(databaseRowHashStr,16)
+    databaseRowHashBinStr=format(databaseRowHashInt,'064b')   
+    #dist=sum(c1 != c2 for c1, c2 in zip(hashValfmDatabaseBinStr, targetHashValBinStr)) #this doesn't seem to work
+    #return dist
+    compareThese = zip(targetHashBinStr, databaseRowHashBinStr)
+    distance=0
+    for a,b in compareThese:
+        if a==b:
+            distance=distance+1
+    return distance
+
+
 """
 Example usages:
 hval_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashvalue']).take(3)
@@ -134,8 +149,8 @@ def findClosestMatches (input):
 
 def raw_data_tojson (input):
     #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
-    output=json.loads(input[1])
     print("json input: ", input)
+    output=json.loads(input[1])
     print("json output: ", output)
     print("json imgName: ", output['imgName'])
     print("json hash: ", output['hash'])
@@ -170,32 +185,54 @@ def main():
     
     print("hi")
     print("stream fm kafka:", streamFromKafka)
-    #doSomething = streamFromKafka.map(raw_data_tojson).pprint(4) #this works BUT I DONT KNOW WHY. SEEMS LIKE MAP IS APPLIED DIRECTLY DOWN TO LOWEST FILE? (SKIPPED AN RDD?)
+
+    """
+    Breaks
     #doSomething = streamFromKafka.foreach(raw_data_tojson).pprint() #this DOESNT work, KafkaDStream has no attribute 'foreach'
     #doSomething = streamFromKafka.foreachRDD(raw_data_tojson) #this DOESNT work. Returns RDDs. Whereas a simple .map maps to all items in RDD
+    #imageFindRequests = streamFromKafka.foreachRDD(lambda x: x.foreach(findClosestMatches)) #doesn't work
+    #streamFromKafka.map(raw_data_tojson).map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable("vss", "hval_table", [],['id'])
+    streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x))) #AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x) ).join(hval_table.map(lambda x: (1,x)))).foreach() #AttributeError: 'KafkaTransformedDStream' object has no attribute 'foreach'
+    
+    #Breaks due to RDD scope issue
     #imageFindRequests = streamFromKafka.map(lambda rdd: rdd.map(lambda row: findClosestMatches(row))).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
     #imageFindRequests = streamFromKafka.map(findClosestMatches).pprint() #question: is this the correct syntax? I just want my findClosestMatches to run
-    #imageFindRequests = streamFromKafka.foreachRDD(lambda x: x.foreach(findClosestMatches)) #doesn't work
 
+    #Breaks for some other reason
+    #streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x:(1,x))) #doesn't work, AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
     #streamFromKafka.map(lambda x: (json.loads(x[1]))).cartesian(hval_table)
     #hval_table.cartesian(streamFromKafka.map(raw_data_tojson)) #doesn't work
-    #hval_table.cartesian()
-    #hval_table.cartesian()
 
-    #hval_for_join = hval_table.map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable
-    #streamFromKafka.map(raw_data_tojson).map(lambda x: ({"joinKey":1,x})).joinWithCassandraTable("vss", "hval_table", [],['id'])
-    #maybe try this:
-    #hval_table.map(lambda x: (1,x)).join(rdd2.map(lambda x:(1,x))).collect()
-    #hval_table.filter(lambda x:(x['hashvalue']=='038bffff40008af3')).map(lambda x: (1,x)).join(hval_table.filter(lambda x:(x['partitionby']==25)).map(lambda x: (1,x))).collect()
+    Doesn't crash
+    #hval_table.filter(lambda x:(x['hashvalue']=='038bffff40008af3')).map(lambda x: (1,x)).join(hval_table.filter(lambda x:(x['partitionby']==25)).map(lambda x: (1,x))).collect() #this works
 
-    #resultingTable=streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x)))
-    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (x,1) ).join(hval_table.map(lambda x: (1,x)))).pprint()
+    """
+    #streamFromKafka.map(raw_data_tojson).pprint() #this works BUT I DONT KNOW WHY. SEEMS LIKE MAP IS APPLIED DIRECTLY DOWN TO LOWEST FILE? (SKIPPED AN RDD?)
+    #streamFromKafka.map(printMe).pprint() #this works..
+    #streamFromKafka.map(lambda x: (1,x)).map(printMe).pprint() #This works, results in: (1, (None, u'{"imgName": "Flask.png", "hash": "5141bde30ef3833a", "time": 1475016832.642927}'))
+    #streamFromKafka.map(lambda x: (1,x)).foreachRDD(lambda rdd: rdd.join(hval_table.map(lambda x: (1,x)))).map(printMe).pprint() #AttributeError: 'NoneType' object has no attribute 'map'
+    #streamFromKafka.foreachRDD(lambda rdd: (rdd.map(lambda x: (1,x))) ).map(printMe).pprint()
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x) ).join(hval_table.map(lambda x: (1,x)))).pprint() #this seems to work, 
+    #outputs rows of the following:
+    #(1, ((None, u'{"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475023909.082745}'), Row(framenumber=135, frametime=5630.625, hashvalue=u'6daab6a32cb6b209', partitionby=42, videoname=u'TERMINATOR_GENISYS_Clip_War_of_the_Machines-vjZDU_WldAw.mp4')))
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).pprint() #this seems to work, 
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1]) ).join(hval_table.map(lambda x: (1,x)))).map(findClosest).pprint() #this seems to work, 
 
+    #streamFromKafka.foreachRDD(lambda rdd: rdd.map(lambda x: (1,x))).join(hval_table.map(lambda x: (1,x)))).map(printMe).pprint() 
+    #streamFromKafka.map(lambda x: (1,x)).join(hval_table.map(lambda x: (1,x))).map(printMe).pprint() #AttributeError: 'PipelinedRDD' object has no attribute '_jdstream'
     print("here")
 
 
     ssc.start()
     ssc.awaitTermination()
+
+def findClosest(x):
+    distance=calcDistStr(x[1][0][1]['hash'],x[1][1][0]['hashvalue'])
+    return distance
+
+def printMe(x):
+    return x
 
 if __name__ == '__main__':
   main()
