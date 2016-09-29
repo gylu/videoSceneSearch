@@ -50,9 +50,9 @@ CREATE TABLE vname (
 	hashvalue text,
 	videoname text,
 	framenumber int,
-	time timestamp,
+	frametime float,
 	youtubelink text,
-	PRIMARY KEY (videoname, framenumber, time)
+	PRIMARY KEY (videoname, framenumber)
 ) WITH CLUSTERING ORDER BY (framenumber ASC);
 
 /////////////////////////////////////////////////////////////////////

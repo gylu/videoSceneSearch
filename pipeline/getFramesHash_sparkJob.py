@@ -1,5 +1,6 @@
 from pyspark import SparkContext
 from pyspark import SparkConf
+from pyspark import StorageLevel
 import pyspark_cassandra
 import time
 
@@ -66,7 +67,11 @@ def getFrames(inputFile):
 #Then after it brakes, going back to sc.wholeTextFiles doesn't work, even with take 1
 #rdd.flatMap(getFrames).take(1)
 #rdd.flatMap(getFrames).saveAsTextFile("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/outputExample.txt")
-rdd.flatMap(getFrames).saveToCassandra("vss","hval")
+#rdd.flatMap(getFrames).saveToCassandra("vss","hval") #what worked the first time
+output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
+output.saveToCassandra("vss","hval")
+output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassandra() results in AttributeError: 'NoneType' object has no attribute 'saveToCassandra'
+#question: got this error: WARN QueuedThreadPool: 1 threads could not be stopped
 
 #for some reason, if i use flatmap, take(4) only does take(1)?
 
@@ -76,8 +81,8 @@ rdd.flatMap(getFrames).saveToCassandra("vss","hval")
 """"
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-174:7077 \
---executor-memory 4000M \
---driver-memory 2000M \
+--executor-memory 3200M \
+--driver-memory 1800M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
