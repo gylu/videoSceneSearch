@@ -1,6 +1,6 @@
 import os
 import sys
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, stream_with_context, Response
 from vss_flask import app
 from werkzeug import secure_filename 
 import pdb
@@ -20,12 +20,14 @@ kafka_node_dns4='ec2-52-35-12-160.us-west-2.compute.amazonaws.com:9092'
 
 #producer = KafkaProducer(bootstrap_servers =  kafka_node_dns + ':9092')
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
-
+from flask_cassandra import CassandraCluster
+cassandra = CassandraCluster()
 
 # This is the path to the upload directory
 app.config['UPLOAD_FOLDER'] = 'vss_flask/static/uploads'
 # These are the extension that we are accepting to be uploaded
 app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'png', 'jpg', 'jpeg', 'gif'])
+app.config['CASSANDRA_NODES'] = ['cassandra-c1.terbiumlabs.com']  # can be a string or list of nodes
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -48,6 +50,7 @@ def about():
     message="work in progress..."
     return render_template('about.html', title=title, message=message)
 
+
 @app.route('/runprovided' , methods=['POST'])
 def runprovided():
     print('Hello world also!')
@@ -59,9 +62,43 @@ def runprovided():
     hashValue=imagehash.phash(Image.open(filepath))
     jsonToSend={"imgName":file,"hash":str(hashValue),"time":time.time()}
     print("json being sent: ",jsonToSend)
-    producer.send('imgSearchRequests', jsonToSend)    
+    producer.send('imgSearchRequests', jsonToSend)
     return render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
 
+
+    # def generate():
+    #     yield 'Hello '
+    #     yield 'Hello'
+    #     yield '!'
+    # # return Response(stream_with_context(generate()))
+    # def generateTemplates():
+    #     yield render_template('results.html', jsonSent=jsonToSend, message="Checking....")
+    #     time.sleep(1)
+    #     yield render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
+    #     time.sleep(4)
+    #     yield render_template('results.html', jsonSent=jsonToSend, message="s for it...")
+    #     # while True:
+    #     #     time.sleep(10)
+    #     #     yield render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
+    # return Response(generateTemplates())
+    #session = cassandra.connect()
+    #session.set_keyspace("vss")
+    # cql = "SELECT * FROM queryresults WHERE 1"
+    # while True:
+    #     r = session.execute(cql)
+    #     if r==[]
+    # return str(r[0])
+    
+
+# @app.route('/results')
+# def results():
+#     session = cassandra.connect()
+#     session.set_keyspace("vss")
+#     cql = "SELECT * FROM queryresults LIMIT 1"
+#     while True:
+#         r = session.execute(cql)
+#         if r==[]
+#     return str(r[0])
 
 # Route that will process the file upload
 @app.route('/upload', methods=['POST'])
@@ -83,12 +120,10 @@ def upload():
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
         #keep pinging until get result
-
         print(hashValue)
         # Redirect the user to the uploaded_file route, which
         # will basicaly show on the browser the uploaded file
         return render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
-        #return redirect(url_for('get_uploadedFile', filename=filename))
 
 # This route is expecting a parameter containing the name
 # of a file. Then it will locate that file on the upload

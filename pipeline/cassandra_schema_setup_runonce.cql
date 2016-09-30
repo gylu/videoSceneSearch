@@ -42,9 +42,7 @@ CREATE TABLE hval (
 
 //do I need time if all I am going to do with it is used to avoiding duplicate primary key?
 //is it ok to have everything as primary key?
-//using blog because Cassandra doesn't support unsigned 64bit int
 
-//timestamp is used as a primary key in case user uploads a video with the same name
 DROP TABLE vname;
 CREATE TABLE vname (
 	hashvalue text,
@@ -56,6 +54,20 @@ CREATE TABLE vname (
 ) WITH CLUSTERING ORDER BY (framenumber ASC);
 
 /////////////////////////////////////////////////////////////////////
+DROP TABLE queryresults;
+CREATE TABLE queryresults (
+	imagename text,
+	targetimagehash text,
+	framehash text,
+	videoname text,
+	framenumber int,
+	distance int,
+	frametime float,
+	youtubelink text,
+	PRIMARY KEY (framehash, distance, imagename, videoname, framenumber)
+) WITH CLUSTERING ORDER BY (distance ASC);
+
+
 
 //To note regarding blobs and storing them as hex
 //http://stackoverflow.com/questions/31994880/why-cassandra-cql-query-with-hexadecimal-literal-works-but-textasbinary-does-not

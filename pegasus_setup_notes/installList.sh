@@ -39,7 +39,16 @@ peg service ${CLUSTER_NAME} kafka-manager start
 peg service ${CLUSTER_NAME} cassandra start
 peg service george-cluster spark start
 
+#Additional installs
+#on all nodes
+#sudo apt-get install python-opencv
+#pip install pillow
+#sudo pip install imagehash
+#
+#
 
+#On name node
+#pip install flask-cassandra
 
 #Note that using pegasus to install zookeeper pretty much did everything here:
 #https://github.com/InsightDataScience/data-engineering-ecosystem/wiki/zookeeper. 
@@ -60,6 +69,7 @@ peg service george-cluster spark start
 #### Notes about monitoring:
 #For Spark
 #http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:8080/
+#http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:4040/
 #For Hadoop
 #http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:50070/
 

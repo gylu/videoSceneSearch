@@ -82,7 +82,7 @@ output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassand
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-174:7077 \
 --executor-memory 3200M \
---driver-memory 1800M \
+--driver-memory 1700M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py

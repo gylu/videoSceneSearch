@@ -1,21 +1,33 @@
 {% extends "layout.html" %}
 {% block content %}
   <div class="container">
-    <h2>Wadddddddupppp!!!</h2>
+
     <br>
 
-    <h3>Upload an image you want me to search for out of the many youtube vidoes in my database</h3> 
+    <h3 id="myMessage">Upload an image to search for
+  <br/>
+  If you don't want to upload an image, choose one from below
+    </h3> 
+
 
 	<form action="upload" method="post" enctype="multipart/form-data">
 		<input type="file" name="uploadFile"> 
     <br/>
 
-		<input type="submit" value="Upload the Chosen File">
+		<input type="submit" value="Upload the Chosen File" onclick="clickedSubmit()">
 	</form>
     <br>
     <br/>
   {% include "partials/images.html" %}
 
   </div>
+
+  <script>
+    function clickedSubmit(name)
+    {
+    document.getElementById("myMessage").innerHTML = "Please wait!"
+    }
+  </script>
+
 
 {% endblock %}
