@@ -2,7 +2,7 @@
   
 {% block content %}
 	<div>
-		<h3> The following image was sent over to the server for searching: </h3>
+		<h3> The following image was sent to the server for searching: </h3>
 		<p> {{jsonSent}}</p>
 		<img src={{url_for('static', filename='uploads/'+imageName)}} style="width:500px;height:auto;border:5px;"value={{imageName}}>
 	</div>
@@ -16,9 +16,10 @@
 		<iframe width="640" height="360" src="http://www.youtube.com/embed/{{youtubeid}}?rel=0" frameborder="0" allowfullscreen></iframe>
 		<p style="margin:0">Distance: {{message.distance}}</p>
 		<p style="margin:0">Target image hash: {{message.targetimagehash}}</p>
-		<p style="margin:0">Found image hash: {{message.framehash}}</p>
-		<p style="margin:0">Video frame time: {{message.frametime}}</p>
+		<p style="margin:0">Found image hash: {{message.framehash}}s</p>
+		<p style="margin:0">Video frame time containing most similar frame: {{message.frametime}}</p>
 		<p style="margin:0">Details: {{message}}</p>
+		<br>
 		<br>
 		<br>
 		{% endfor %}
