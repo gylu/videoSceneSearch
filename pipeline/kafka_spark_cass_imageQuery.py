@@ -56,7 +56,7 @@ import imagehash
 
 import pdb
 from kafka import KafkaProducer
-import time
+
 ##
 hval_table=0 #global rdd
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
@@ -65,10 +65,6 @@ batch_interval = 5 #question, why is batch interval of 5 so much better than 3? 
 sc = CassandraSparkContext(appName="PythonStreamingVSS") #http://www.slideshare.net/JonHaddad/intro-to-py-spark-and-cassandra
 ssc = StreamingContext(sc, batch_interval)
 
-
-def hamming2(s1, s2):
-    """Calculate the Hamming distance between two bit strings"""
-    return sum(c1 != c2 for c1, c2 in zip(s1, s2))
 
 """
 Example usages:
@@ -163,7 +159,7 @@ $SPARK_HOME/bin/spark-submit \
 --executor-memory 3200M \
 --driver-memory 1700M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
 $SPARK_HOME/bin/spark-submit \
@@ -171,7 +167,7 @@ $SPARK_HOME/bin/spark-submit \
 --executor-memory 4000M \
 --driver-memory 2000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1, TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
 #Running on single node
@@ -180,11 +176,11 @@ $SPARK_HOME/bin/spark-submit \
 --driver-memory 2000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
 TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
 #Running spark shell with cassandra
 $SPARK_HOME/bin/pyspark \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84
 """

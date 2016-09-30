@@ -2,12 +2,26 @@
   
 {% block content %}
 	<div>
-		The following was sent over to the server for processing:
+		<h3> The following image was sent over to the server for searching: </h3>
 		<p> {{jsonSent}}</p>
+		<img src={{url_for('static', filename='uploads/'+imageName)}} style="width:500px;height:auto;border:5px;"value={{imageName}}>
 	</div>
 
 	<div>
-		Below are the results:
-		{{message}}
+		<br>
+		<h3> Below are the results (lower distance is more similar, 0 to 64) </h3>
+		<br>
+		<br>
+		{% for message, youtubeid in results %}
+		<iframe width="640" height="360" src="http://www.youtube.com/embed/{{youtubeid}}?rel=0" frameborder="0" allowfullscreen></iframe>
+		<p style="margin:0">Distance: {{message.distance}}</p>
+		<p style="margin:0">Target image hash: {{message.targetimagehash}}</p>
+		<p style="margin:0">Found image hash: {{message.framehash}}</p>
+		<p style="margin:0">Video frame time: {{message.frametime}}</p>
+		<p style="margin:0">Details: {{message}}</p>
+		<br>
+		<br>
+		{% endfor %}
+	
 	</div>
 {% endblock %}

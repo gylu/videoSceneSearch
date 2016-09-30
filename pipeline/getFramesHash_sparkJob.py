@@ -84,19 +84,19 @@ $SPARK_HOME/bin/spark-submit \
 --executor-memory 3200M \
 --driver-memory 1700M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
 
 #questions: kept getting this issue: WARN TaskSchedulerImpl: Initial job has not accepted any resources; check your cluster UI to ensure that workers are registered and have sufficient resources
 
 $SPARK_HOME/bin/spark-submit \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1 \
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
 
 $SPARK_HOME/bin/pyspark \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.35.12.160,52.33.155.170,54.69.1.84,52.41.224.1
+--conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
 """
 
 # #### Question - This doesn't seem to work, because the RDD forgets it...? ####

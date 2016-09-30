@@ -64,7 +64,7 @@ CREATE TABLE queryresults (
 	distance int,
 	frametime float,
 	youtubelink text,
-	PRIMARY KEY (framehash, distance, imagename, videoname, framenumber)
+	PRIMARY KEY (targetimagehash, distance, imagename, videoname, framenumber)
 ) WITH CLUSTERING ORDER BY (distance ASC);
 
 
@@ -82,4 +82,8 @@ rdd.saveToCassandra('vss','hval')
 */
 
 SELECT * FROM hval;
+
+
+cql = "SELECT * FROM queryresults WHERE targetimagehash='095adad95741eacc' ALLOW FILTERING"
+res=session.execute(cql)
 

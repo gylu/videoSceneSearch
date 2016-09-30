@@ -40,15 +40,20 @@ peg service ${CLUSTER_NAME} cassandra start
 peg service george-cluster spark start
 
 #Additional installs
-#on all nodes
+#On all nodes
 #sudo apt-get install python-opencv
-#pip install pillow
+#sudo pip install pillow
 #sudo pip install imagehash
+#sudo pip install kafka-python
 #
-#
+#On webserver node
+#sudo pip install Flask
+#sudo pip install cassandra-driver
 
-#On name node
-#pip install flask-cassandra
+#Note, refer to here for the kafka-python install
+#http://kafka-python.readthedocs.io/en/master/install.html
+#for the datastax cassandra driver
+#note that sudo pip install cassandra-driver is from datastax #https://datastax.github.io/python-driver/installation.html
 
 #Note that using pegasus to install zookeeper pretty much did everything here:
 #https://github.com/InsightDataScience/data-engineering-ecosystem/wiki/zookeeper. 

@@ -1,31 +1,34 @@
 {% extends "layout.html" %}
 {% block content %}
-  <div class="container">
-
-    <br>
-
-    <h3 id="myMessage">Upload an image to search for
-  <br/>
-  If you don't want to upload an image, choose one from below
+  <div class="container" >
+    <h3 id="myMessage">
+      Upload an image to search for
+      <br/>
     </h3> 
 
-
-	<form action="upload" method="post" enctype="multipart/form-data">
-		<input type="file" name="uploadFile"> 
-    <br/>
-
-		<input type="submit" value="Upload the Chosen File" onclick="clickedSubmit()">
-	</form>
+    <div id="disappearOnClick">
     <br>
-    <br/>
-  {% include "partials/images.html" %}
+  	<form action="upload" method="post" enctype="multipart/form-data">
+  		<input type="file" name="uploadFile"> 
+      <br/>
 
+  		<input type="submit" value="Upload the Chosen File" onclick="clickedSubmit()">
+  	</form>
+      <br>
+      <h3>
+      Or choose one from below
+
+      </h3>
+      <br/>
+    {% include "partials/images.html" %}
+    </div>
   </div>
 
   <script>
-    function clickedSubmit(name)
+    function clickedSubmit()
     {
-    document.getElementById("myMessage").innerHTML = "Please wait!"
+      document.getElementById("myMessage").innerHTML = "Please wait..."
+      document.getElementById("disappearOnClick").style.display = "none";
     }
   </script>
 
