@@ -118,16 +118,17 @@ def main():
 #[{"distance": 16, "framenumber": 250, "videoname": "Bunraku_Trailer_HD-jVabHVw4dMc.mp4", "framehash": "8725ec7a7ada1a82", "youtubelink": "www.youtube.com/watch?v=jVabHVw4dMc", "frametime": 10.0, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 1375, "videoname": "New_World_Movie_Clip_RED_BAND-axRTL8yvXtI.mp4", "framehash": "8585f27a78585ad6", "youtubelink": "www.youtube.com/watch?v=axRTL8yvXtI", "frametime": 57.34895706176758, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 3085, "videoname": "FAST_and_FURIOUS_7_Official_Trailer-KBhXp1gqZRo.mp4", "framehash": "9783407c78f83ada", "youtubelink": "www.youtube.com/watch?v=KBhXp1gqZRo", "frametime": 128.6702117919922, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}]
 def takeTop(rdd):
     global producer;
-    framesfounds= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra
-    uniqueNames=set(item['videoname'] for item in framesfounds)
+    framesfound= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra
+    framesfound=framesfound[:3] #this is to only get 3, even if there are ties
+    uniqueNames=set(item['videoname'] for item in framesfound)
     distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).collect()
     #distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).map(lambda x:("imagename":x['imagename'],"targetimagehash":x['targetimagehash'],"videoname":x['videoname'],"framenumber":x['framenumber'],"distance":x['distance'],"frametime":x['frametime']) ).collect()
     #print("output:", output)
     #rdd.map(lambda x: set(x['videoname']))
-    producer.send('searchReturns',framesfounds)
+    producer.send('searchReturns',framesfound)
     sc.parallelize(distancesOfCloseVids).saveToCassandra("vss","distances")
-    sc.parallelize(framesfounds).saveToCassandra("vss","queryresults")
-    #return framesfounds
+    sc.parallelize(framesfound).saveToCassandra("vss","queryresults")
+    #return framesfound
 
 
 def addDistanceInfo(x):

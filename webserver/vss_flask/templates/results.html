@@ -7,6 +7,19 @@
 		<img src={{url_for('static', filename='uploads/'+imageName)}} style="width:500px;height:auto;border:5px;"value={{imageName}}>
 	</div>
 
+
+
+	<div>
+      <p>
+	    <input type="text" size="5" name="a"> +
+	    <input type="text" size="5" name="b"> =
+    	<span id="result">?</span>
+    	<p>
+    	<span id="wait">wait...</span>
+    	<p>
+    	<a href="javascript:void();" id="calculate">calculate server side</a>
+     </div>
+
 	<div>
 		<br>
 		<h3> Below are the results (lower distance is more similar, 0 to 64) </h3>
@@ -22,6 +35,8 @@
 			<br>
 			<br>
 			<br>
+
+
 		{% endfor %}
 	
 	</div>

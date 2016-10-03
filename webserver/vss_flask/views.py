@@ -1,6 +1,6 @@
 import os
 import sys
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, stream_with_context, Response
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, stream_with_context, Response, jsonify
 from vss_flask import app
 from werkzeug import secure_filename 
 import pdb
@@ -30,6 +30,16 @@ session = cluster.connect('vss')
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+
+
+@app.route('/_add_numbers')
+def add_numbers():
+    a = request.args.get('a', 0, type=int)
+    b = request.args.get('b', 0, type=int)
+    print("here in add numbers: ", request, "a: ", a,"b: ", b)
+    result=jsonify(result=a + b)
+    print('result: ',result)
+    return result
 
 
 #ec2-52-41-224-1.us-west-2.compute.amazonaws.com:80
@@ -67,7 +77,9 @@ def runprovided():
     while True:
         cqlresult = session.execute(cql)
         if cqlresult:
-            break
+            print("cqlresult: ", cqlresult)
+            if cqlresult.current_rows>2: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
+                break
     arrayOfResults=[]
     arrayOfYoutubeIDs=[]
     arrayOfYoutubeTimes=[]
@@ -75,6 +87,9 @@ def runprovided():
         arrayOfResults.append(row)
         arrayOfYoutubeIDs.append(str(row.youtubelink)[-11:]) #get the youtube video id
         arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-2) #get the youtube video id
+    arrayOfResults=arrayOfResults[:3]
+    arrayOfYoutubeIDs=arrayOfYoutubeIDs[:3]
+    arrayOfYoutubeTimes=arrayOfYoutubeTimes[:3]
     # oneYoutubeID=arrayOfYoutubeIDs[0]
     return render_template('results.html', jsonSent=jsonToSend, results=zip(arrayOfResults,arrayOfYoutubeIDs, arrayOfYoutubeTimes), imageName=imageName)
 
