@@ -29,7 +29,7 @@
 		{% for message, youtubeid, videotime in results %}
 
 			{% set count = count + 1 %}
-			<iframe width="853" height="360" src="http://www.youtube.com/embed/{{youtubeid}}?rel=0&start={{videotime}}" frameborder="0" allowfullscreen></iframe>
+			<iframe width="853" height="480" src="http://www.youtube.com/embed/{{youtubeid}}?rel=0&start={{videotime}}" frameborder="0" allowfullscreen></iframe>
 			<div id="chart__{{count}}" style=""></div>
 			<p style="margin:0">Video time containing most similar frame: {{message.frametime}} seconds</p>
 			<p style="margin:0">Distance: {{message.distance}}</p>
