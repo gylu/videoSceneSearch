@@ -99,6 +99,22 @@
       });
     });
 
+    $(function() {
+      $('a#getallframes').bind('click', function() {
+        var me=$(this)
+        videoname=me.attr('videoname')
+        targetimagehash=me.attr('targetimagehash')
+        $.getJSON('/_getallframes', {
+          videoname: videoname,
+          targetimagehash: targetimagehash
+        }, function(data) {
+          $("#graph").text(data.graph);
+        });
+        $("#msg2").text("wait!!!");
+        return false;
+      });
+    });
+
     </script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->

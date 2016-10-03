@@ -42,6 +42,16 @@ def add_numbers():
     return result
 
 
+@app.route('/_getallframes')
+def getallframes():
+    videoname = request.args.get('videoname', 0, type=str)
+    targetimagehash = request.args.get('targetimagehash', 0, type=str)
+    print("here in _getallframes request: ", request, "videoname: ", videoname,"targetimagehash: ", targetimagehash)
+    result=jsonify(graph=targetimagehash)
+    print('result: ',result)
+    return result
+
+
 #ec2-52-41-224-1.us-west-2.compute.amazonaws.com:80
 @app.route('/')
 def home():
