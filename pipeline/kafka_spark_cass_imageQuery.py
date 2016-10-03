@@ -86,8 +86,8 @@ def main():
     global hval_table;
     global producer;
     if len(sys.argv) != 3:
-        #print("Usage: thisfile.py <zk> <sensor_topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
-        print("Usage: thisfile.py <zk> <sensor_topic>")
+        #print("Usage: thisfile.py <zk> <topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
+        print("Usage: thisfile.py <zk> <topic>")
         exit(-1)
 
 

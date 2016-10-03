@@ -37,7 +37,19 @@ peg service ${CLUSTER_NAME} hadoop start
 peg service ${CLUSTER_NAME} zookeeper start
 peg service ${CLUSTER_NAME} kafka-manager start
 peg service ${CLUSTER_NAME} cassandra start
-peg service george-cluster spark start
+peg service ${CLUSTER_NAME} spark start
+
+#george4
+#spark
+#hadoop
+
+#george-db
+#cassandra, started
+
+#george-cluster
+#kafka, started
+#flask
+
 
 #Additional installs
 #On all nodes
@@ -63,7 +75,8 @@ peg service george-cluster spark start
 #https://github.com/InsightDataScience/data-engineering-ecosystem/wiki/Kafka
 #Can check whether kafka started: usr/local/kafka/bin/kafka-topics.sh --list --zookeeper localhost:2181
 #Kafka manager running at: http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9001/
-#/usr/local/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic imgSearchRequests --partitions 4 --replication-factor 2
+#/usr/local/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic imgSearchRequests --partitions 4 --replication-factor 3
+#the only other thing I did was update retention policy at /usr/local/kafka/config/server.properties to become 24hrs instead of 168
 
 #Note to self about messages that appeared when hadoop cluster started
 #HDFS WebUI is running at http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:50070
@@ -93,6 +106,56 @@ peg service george-cluster spark start
 #youtube-dl -i --restrict-filenames -o "videoFiles/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/watch?v=yWyj9ORkj8w
 #into HDFS directly?
 #youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | hdfs dfs -put - "/videoFiles/%(title)s-%(id)s.%(ext)s"
+#Onto s3?
+#~/playground/videos$ youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | aws s3 mv - s3://videoscenesearch/videoFiles/%(title)s-%(id)s.%(ext)s
 
 #FFmpeg local usage (quality still seems to be smaller image size):
 #./ffmpeg -i Superman_s_True_Power-yWyj9ORkj8w.mp4 -q:v 1 ./frames_superman_ffmpeg/filename%03d.jpg
+
+
+###############Notes about memory usage############
+#du -sh ~/videos showed 7.4G used
+#du -sh ~/ showed 8.6G used
+#du -sh / showed 12G used, with msgs about how it couldn't access/read some of my files
+# ubuntu@ip-172-31-0-174:~$ df -h
+# Filesystem      Size  Used Avail Use% Mounted on
+# /dev/xvda1      158G   12G  139G   8% /
+# none            4.0K     0  4.0K   0% /sys/fs/cgroup
+# udev            3.9G   12K  3.9G   1% /dev
+# tmpfs           799M  380K  799M   1% /run
+# none            5.0M     0  5.0M   0% /run/lock
+# none            3.9G     0  3.9G   0% /run/shm
+# none            100M   20K  100M   1% /run/user
+
+#####Notes about free -m memory usage:
+#2455 free before stopping spark (just the service, already didn't have batch nor stream running), aftewards, had 2970 free
+#before
+# ubuntu@ip-172-31-0-174:~$ free -m
+#              total       used       free     shared    buffers     cached
+# Mem:          7983       7681        302          0         89       2230
+# -/+ buffers/cache:       5361       2622
+# Swap:            0          0          0
+#Then stopping kafka manager
+# ubuntu@ip-172-31-0-174:~$ free -m
+#              total       used       free     shared    buffers     cached
+# Mem:          7983       7422        561          0         89       2231
+# -/+ buffers/cache:       5100       2883
+# Swap:            0          0          0
+#Then stopping kafka
+# ubuntu@ip-172-31-0-174:~$ free -m
+#              total       used       free     shared    buffers     cached
+# Mem:          7983       6284       1699          0         89       2233
+# -/+ buffers/cache:       3961       4022
+# Swap:            0          0          0
+#Then stopping hadoop
+# ubuntu@ip-172-31-0-174:~$ free -m
+#              total       used       free     shared    buffers     cached
+# Mem:          7983       5141       2842          0         92       2233
+# -/+ buffers/cache:       2815       5168
+# Swap:            0          0          0
+#Then stopping cassandra:
+# ubuntu@ip-172-31-0-174:~$ free -m
+#              total       used       free     shared    buffers     cached
+# Mem:          7983       2734       5249          0         94       2251
+# -/+ buffers/cache:        389       7594
+# Swap:            0          0          0
