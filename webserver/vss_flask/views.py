@@ -42,14 +42,37 @@ def add_numbers():
     return result
 
 
+# something like this
+# cqlsh:vss> select * from distances where videoname = 'PIXELS_Peter_Dinklage_Character_TRAILER-t_wS7kG8Cec.mp4' and targetimagehash='095adad95741eacc' and frametime>0;
+# InvalidRequest: code=2200 [Invalid query] message="PRIMARY KEY column "targetimagehash" cannot be restricted (preceding column "frametime" is restricted by a non-EQ relation)"
 @app.route('/_getallframes')
 def getallframes():
     videoname = request.args.get('videoname', 0, type=str)
     targetimagehash = request.args.get('targetimagehash', 0, type=str)
     print("here in _getallframes request: ", request, "videoname: ", videoname,"targetimagehash: ", targetimagehash)
-    result=jsonify(graph=targetimagehash)
-    print('result: ',result)
-    return result
+    #result=jsonify(graph=targetimagehash)
+    cql = "SELECT frametime, distance FROM distances WHERE videoname = '"+videoname+"' and targetimagehash='"+targetimagehash+"'"
+    print("cql printed: ",cql)
+    #cql = "SELECT * FROM queryresults LIMIT 1"
+    cqlresult=0
+    frameresults=[]
+    times=[]
+    distances=[]
+    while True:
+        cqlresult = session.execute(cql)
+        if cqlresult:
+            print("cqlresult: ", cqlresult)
+            if cqlresult.current_rows>2: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
+                break
+    for row in cqlresult:
+        frameresults.append(row)
+        times.append(row.frametime)
+        distances.append(row.distance)
+    print('result: ',frameresults)
+    print('distances: ',times)
+    print('result: ',distances)
+    graph=jsonify(times=times,distances=distances)
+    return graph
 
 
 #ec2-52-41-224-1.us-west-2.compute.amazonaws.com:80

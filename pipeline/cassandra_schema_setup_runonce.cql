@@ -79,8 +79,8 @@ CREATE TABLE distances (
 	framenumber int,
 	distance int,
 	frametime float,
-	PRIMARY KEY (videoname, frametime, targetimagehash)
-) WITH CLUSTERING ORDER BY (frametime ASC);
+	PRIMARY KEY (videoname, targetimagehash, frametime)
+);
 
 
 
