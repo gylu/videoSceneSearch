@@ -68,9 +68,9 @@ def getallframes():
         frameresults.append(row)
         times.append(row.frametime)
         distances.append(row.distance)
-    print('result: ',frameresults)
-    print('distances: ',times)
-    print('result: ',distances)
+    #print('result: ',frameresults)
+    #print('distances: ',times)
+    #print('result: ',distances)
     graph=jsonify(times=times,distances=distances)
     return graph
 

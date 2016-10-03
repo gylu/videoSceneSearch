@@ -94,31 +94,35 @@
       $("body").scrollTop(0);
     }
 
-    $(function() {
-      $('a#calculate').bind('click', function() {
-        $.getJSON('/_add_numbers', {
-          a: $('input[name="a"]').val(),
-          b: $('input[name="b"]').val()
-        }, function(data) {
-          $("#result").text(data.result);
-        });
-        $("#wait").text("wait!!!");
-        return false;
-      });
-    });
+    // $(function() {
+    //   $('a#calculate').bind('click', function() {
+    //     $.getJSON('/_add_numbers', {
+    //       a: $('input[name="a"]').val(),
+    //       b: $('input[name="b"]').val()
+    //     }, function(data) {
+    //       $("#result").text(data.result);
+    //     });
+    //     $("#wait").text("wait!!!");
+    //     return false;
+    //   });
+    // });
 
     $(function() {
       $('a#getallframes').bind('click', function() {
         var me=$(this)
         videoname=me.attr('videoname')
         targetimagehash=me.attr('targetimagehash')
+        chartcount=me.attr('chartcount')
         $.getJSON('/_getallframes', {
           videoname: videoname,
           targetimagehash: targetimagehash
         }, function(output) {
-          $("#graph").text(output);
-
           var chart = c3.generate({
+              bindto: '#chart__'+chartcount.toString(),
+              size: {
+                  height: 480,
+                  width: 853
+              },
               data: {
                   x: 'x',
           //        xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
@@ -141,7 +145,6 @@
           });
 
         });
-        $("#msg2").text("wait!!!");
         return false;
       });
     });
