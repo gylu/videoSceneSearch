@@ -12,26 +12,19 @@ import time
 import json
 from kafka import KafkaProducer
 from cassandra.cluster import Cluster #datastax
-#Cassandra cluster using datastax
-cluster = Cluster(['52.41.224.1','52.35.12.160','52.33.155.170','54.69.1.84'])
-session = cluster.connect('vss')
 
-#kafka_node_dns="http://ec2-52-41-224-1.us-west-2.compute.amazonaws.com"
-kafka_node_dns1='ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092'
-kafka_node_dns2='ec2-52-33-155-170.us-west-2.compute.amazonaws.com:9092'
-kafka_node_dns3='ec2-54-69-1-84.us-west-2.compute.amazonaws.com:9092'
-kafka_node_dns4='ec2-52-35-12-160.us-west-2.compute.amazonaws.com:9092'
 
 #producer = KafkaProducer(bootstrap_servers =  kafka_node_dns + ':9092')
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
-#cassandra = CassandraCluster() #broken, delete this later
-
 
 
 app.config['UPLOAD_FOLDER'] = 'vss_flask/static/uploads' # This is the path to the upload directory
 app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'png', 'jpg', 'jpeg', 'gif']) # These are the extension that we are accepting to be uploaded
-app.config['CASSANDRA_NODES'] = ['52.41.224.1','52.35.12.160','52.33.155.170','54.69.1.84']  # can be a string or list of nodes
+app.config['CASSANDRA_NODES'] = ['52.32.192.156','52.32.200.206','54.70.213.12']  # can be a string or list of nodes
 
+#Cassandra cluster using datastax
+cluster = Cluster(app.config['CASSANDRA_NODES'])
+session = cluster.connect('vss')
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -77,11 +70,13 @@ def runprovided():
             break
     arrayOfResults=[]
     arrayOfYoutubeIDs=[]
+    arrayOfYoutubeTimes=[]
     for row in cqlresult:
         arrayOfResults.append(row)
         arrayOfYoutubeIDs.append(str(row.youtubelink)[-11:]) #get the youtube video id
+        arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-2) #get the youtube video id
     # oneYoutubeID=arrayOfYoutubeIDs[0]
-    return render_template('results.html', jsonSent=jsonToSend, results=zip(arrayOfResults,arrayOfYoutubeIDs), imageName=imageName)
+    return render_template('results.html', jsonSent=jsonToSend, results=zip(arrayOfResults,arrayOfYoutubeIDs, arrayOfYoutubeTimes), imageName=imageName)
 
 
 # Route that will process the file upload

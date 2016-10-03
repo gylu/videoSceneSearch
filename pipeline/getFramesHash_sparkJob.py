@@ -3,6 +3,7 @@ from pyspark import SparkConf
 from pyspark import StorageLevel
 import pyspark_cassandra
 import time
+import os
 
 conf = SparkConf().setAppName("getFramesHash")
 sc = SparkContext(conf=conf)
@@ -12,7 +13,11 @@ sc = SparkContext(conf=conf)
 
 #rdd=sc.textFile("/home/ubuntu/playground/Superman_s_True_Power-yWyj9ORkj8w.mp4")
 #rdd=sc.textFile("/Users/gyl/Desktop/insight_projects/test_image_proc/Superman_s_True_Power-yWyj9ORkj8w.mp4")
-hdfsVideoLocation="hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/videos"
+#hdfsVideoLocation="hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/videos"
+
+public_dns = os.environ["PUBLIC_DNS"]
+hdfsVideoLocation="hdfs://{}:9000/videos".format(public_dns)
+#hdfsVideoLocation="hdfs://ec2-52-11-6-165.us-west-2.compute.amazonaws.com:9000/videos"
 rdd=sc.binaryFiles(hdfsVideoLocation) #question, what's the difference between this and binaryFiles? #Note very wierd bug, when changed to take(5), sc.wholeTextFiles stopped working
 
 def getFrames(inputFile):
@@ -69,7 +74,7 @@ def getFrames(inputFile):
 #rdd.flatMap(getFrames).saveAsTextFile("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/outputExample.txt")
 #rdd.flatMap(getFrames).saveToCassandra("vss","hval") #what worked the first time
 output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
-output.saveToCassandra("vss","hval")
+#output.saveToCassandra("vss","hval") #thehval table sucks because bad prefix
 output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassandra() results in AttributeError: 'NoneType' object has no attribute 'saveToCassandra'
 #question: got this error: WARN QueuedThreadPool: 1 threads could not be stopped
 
@@ -80,23 +85,23 @@ output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassand
 
 """"
 $SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-174:7077 \
---executor-memory 3200M \
---driver-memory 1700M \
+--master spark://ip-172-31-0-172:7077 \
+--executor-memory 8000M \
+--driver-memory 8000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
 
 #questions: kept getting this issue: WARN TaskSchedulerImpl: Initial job has not accepted any resources; check your cluster UI to ensure that workers are registered and have sufficient resources
 
 $SPARK_HOME/bin/spark-submit \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
 
 $SPARK_HOME/bin/pyspark \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 """
 
 # #### Question - This doesn't seem to work, because the RDD forgets it...? ####

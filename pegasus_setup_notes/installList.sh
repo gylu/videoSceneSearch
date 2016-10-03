@@ -40,11 +40,12 @@ peg service ${CLUSTER_NAME} cassandra start
 peg service ${CLUSTER_NAME} spark start
 
 #george4
-#spark
-#hadoop
+#install hadoop, didn't have to start it
+#install spark, start spark
+
 
 #george-db
-#cassandra, started
+#install cassandra, start cassandra
 
 #george-cluster
 #kafka, started

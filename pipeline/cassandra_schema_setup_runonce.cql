@@ -27,8 +27,8 @@ rdd.saveToCassandra("test","ages");
 ////////////////////////////////////////////////////////////
 //Create tables 
 CREATE KEYSPACE vss WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
-
 USE vss;
+
 DROP TABLE hval;
 CREATE TABLE hval (
 	partitionby int,
@@ -42,7 +42,7 @@ CREATE TABLE hval (
 
 //do I need time if all I am going to do with it is used to avoiding duplicate primary key?
 //is it ok to have everything as primary key?
-
+/////////////////////////////////////////////////////////////////////
 DROP TABLE vname;
 CREATE TABLE vname (
 	hashvalue text,
@@ -54,6 +54,7 @@ CREATE TABLE vname (
 ) WITH CLUSTERING ORDER BY (framenumber ASC);
 
 /////////////////////////////////////////////////////////////////////
+
 DROP TABLE queryresults;
 CREATE TABLE queryresults (
 	imagename text,
@@ -66,6 +67,20 @@ CREATE TABLE queryresults (
 	youtubelink text,
 	PRIMARY KEY (targetimagehash, distance, imagename, videoname, framenumber)
 ) WITH CLUSTERING ORDER BY (distance ASC);
+
+/////////////////////////////////////////////////////////////////////
+
+DROP TABLE distances;
+CREATE TABLE distances (
+	imagename text,
+	targetimagehash text,
+	framehash text,
+	videoname text,
+	framenumber int,
+	distance int,
+	frametime float,
+	PRIMARY KEY (videoname, frametime, targetimagehash)
+) WITH CLUSTERING ORDER BY (frametime ASC);
 
 
 

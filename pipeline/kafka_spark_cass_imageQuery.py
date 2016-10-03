@@ -58,7 +58,7 @@ import pdb
 from kafka import KafkaProducer
 
 ##
-hval_table=0 #global rdd
+db_table=0 #global rdd
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
 # Kafka and Spark Streaming specific vars
 batch_interval = 5 #question, why is batch interval of 5 so much better than 3? 3 seemed like needed to wait a long time
@@ -68,7 +68,7 @@ ssc = StreamingContext(sc, batch_interval)
 
 """
 Example usages:
-hval_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashvalue']).take(3)
+db_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashvalue']).take(3)
 will resule in
 [u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
 """
@@ -83,7 +83,7 @@ def raw_data_tojson (input):
     return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 def main():
-    global hval_table;
+    global db_table;
     global producer;
     if len(sys.argv) != 3:
         #print("Usage: thisfile.py <zk> <topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
@@ -95,33 +95,39 @@ def main():
 
 
     #example of what can be done
-    #hval_table=sc.cassandraTable("vss","hval") #doesn't work
-    hval_table=sc.cassandraTable("vss","hval").select("hashvalue","youtubelink", "partitionby","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
-    #a=hval_table.select('videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
-    #a=hval_table.select("hashvalue","partitionby",'videoname').map(lambda r: (r['videoname'],1)).reduceByKey(lambda a, b: a+b).collect()
-    #print(a) #this works
+    #db_table=sc.cassandraTable("vss","vname") #doesn't work
+    db_table=sc.cassandraTable("vss","vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
 
     zkQuorum, myTopic = sys.argv[1:]
     # Specify all the nodes you are running Kafka on
-    kafkaBrokers = {"metadata.broker.list": "52.35.12.160:9092,52.33.155.170:9092,54.69.1.84:9092,52.41.224.1:9092"}
+    kafkaBrokers = {"metadata.broker.list": "52.33.155.170:9092,54.69.1.84:9092,52.41.224.1:9092"}
     streamFromKafka = KafkaUtils.createDirectStream(ssc, [myTopic], kafkaBrokers)
     
     print("hi")
     print("stream fm kafka:", streamFromKafka)
 
-    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(hval_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(takeTop) #works once then breaks AttributeError: 'list' object has no attribute '_jrdd'
+    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(takeTop) #works once then breaks AttributeError: 'list' object has no attribute '_jrdd'
     producer.send('searchReturns',"Hello, producer is working. Time is: " + str(time.time()))
     print("here")
     ssc.start()
     ssc.awaitTermination()
 
 
+#example of output:
+#[{'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.08770751953125, 'framehash': '5959a6a6795986a6', 'distance': 4, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1105, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.504791259765625, 'framehash': '5959a6a65959a6a6', 'distance': 6, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1115, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 58.6002082824707, 'framehash': '1999e6e619398ec6', 'distance': 8, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1405, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}]
+#[{"distance": 16, "framenumber": 250, "videoname": "Bunraku_Trailer_HD-jVabHVw4dMc.mp4", "framehash": "8725ec7a7ada1a82", "youtubelink": "www.youtube.com/watch?v=jVabHVw4dMc", "frametime": 10.0, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 1375, "videoname": "New_World_Movie_Clip_RED_BAND-axRTL8yvXtI.mp4", "framehash": "8585f27a78585ad6", "youtubelink": "www.youtube.com/watch?v=axRTL8yvXtI", "frametime": 57.34895706176758, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 3085, "videoname": "FAST_and_FURIOUS_7_Official_Trailer-KBhXp1gqZRo.mp4", "framehash": "9783407c78f83ada", "youtubelink": "www.youtube.com/watch?v=KBhXp1gqZRo", "frametime": 128.6702117919922, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}]
 def takeTop(rdd):
     global producer;
-    output= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra
-    producer.send('searchReturns',output)
-    sc.parallelize(output).saveToCassandra("vss","queryresults")
-    #return output
+    framesfounds= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra
+    uniqueNames=set(item['videoname'] for item in framesfounds)
+    distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).collect()
+    #distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).map(lambda x:("imagename":x['imagename'],"targetimagehash":x['targetimagehash'],"videoname":x['videoname'],"framenumber":x['framenumber'],"distance":x['distance'],"frametime":x['frametime']) ).collect()
+    #print("output:", output)
+    #rdd.map(lambda x: set(x['videoname']))
+    producer.send('searchReturns',framesfounds)
+    sc.parallelize(distancesOfCloseVids).saveToCassandra("vss","distances")
+    sc.parallelize(framesfounds).saveToCassandra("vss","queryresults")
+    #return framesfounds
 
 
 def addDistanceInfo(x):
@@ -155,19 +161,11 @@ if __name__ == '__main__':
 
 """
 $SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-174:7077 \
---executor-memory 3200M \
---driver-memory 1700M \
+--master spark://ip-172-31-0-172:7077 \
+--executor-memory 8000M \
+--driver-memory 8000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
-/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
-
-$SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-174:7077 \
---executor-memory 4000M \
---driver-memory 2000M \
---packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1, TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
 #Running on single node
@@ -176,11 +174,11 @@ $SPARK_HOME/bin/spark-submit \
 --driver-memory 2000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
 TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
 
 #Running spark shell with cassandra
 $SPARK_HOME/bin/pyspark \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.41.224.1,52.35.12.160,52.33.155.170,54.69.1.84
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 """
