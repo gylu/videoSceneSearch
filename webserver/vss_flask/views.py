@@ -89,25 +89,18 @@ def about():
     message="work in progress..."
     return render_template('about.html', title=title, message=message)
 
-
-@app.route('/runprovided' , methods=['POST'])
-def runprovided():
-    print('Hello world also!')
-    file=request.form['uploadFile']
-    imageName=file
-    print("request: ",request)
-    print("file: ",file)
-    filepath=os.path.join(app.config['UPLOAD_FOLDER'], file)
-    print("filepath: ", filepath)
-    hashValue=imagehash.phash(Image.open(filepath))
-    jsonToSend={"imgName":file,"hash":str(hashValue),"time":time.time()}
+def findSimilar(hashValue,imageName):
+    jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
     print("json being sent: ",jsonToSend)
     producer.send('imgSearchRequests', jsonToSend)
     cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' ALLOW FILTERING"
     print("cql printed: ",cql)
-    #cql = "SELECT * FROM queryresults LIMIT 1"
     cqlresult=0
+    starttime=time.time()
     while True:
+        elapsed=time.time()-starttime
+        if int(elapsed)%10==0:
+            print("waiting for cassandra to have query: ", time.time()-starttime)
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
@@ -123,8 +116,19 @@ def runprovided():
     arrayOfResults=arrayOfResults[:3]
     arrayOfYoutubeIDs=arrayOfYoutubeIDs[:3]
     arrayOfYoutubeTimes=arrayOfYoutubeTimes[:3]
-    # oneYoutubeID=arrayOfYoutubeIDs[0]
     return render_template('results.html', jsonSent=jsonToSend, results=zip(arrayOfResults,arrayOfYoutubeIDs, arrayOfYoutubeTimes), imageName=imageName)
+
+
+@app.route('/runprovided' , methods=['POST'])
+def runprovided():
+    print('Hello world also!')
+    filename=request.form['uploadFile']
+    print("request: ",request)
+    print("file: ",filename)
+    filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    print("filepath: ", filepath)
+    hashValue=imagehash.phash(Image.open(filepath))
+    return findSimilar(hashValue,imageName=filename)
 
 
 # Route that will process the file upload
@@ -132,6 +136,7 @@ def runprovided():
 def upload():
     print('Hello world!')
     # Get the name of the uploaded file
+    #file = request.files['uploadFile']
     file = request.files['uploadFile']
     # Check if the file is one of the allowed types/extensions
     if file and allowed_file(file.filename):
@@ -139,18 +144,13 @@ def upload():
         filename = secure_filename(file.filename)
         # Move the file form the temporal folder to
         # the upload folder we setup
+        print("filename: ", filename)
+        print("file: ", file)
         filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        #pdb.set_trace()
         hashValue=imagehash.phash(Image.open(filepath))
-        jsonToSend={"imgName":filename,"hash":str(hashValue),"time":time.time()}
-        print("json being sent: ",jsonToSend)
-        producer.send('imgSearchRequests', jsonToSend)
-        #keep pinging until get result
-        print(hashValue)
-        # Redirect the user to the uploaded_file route, which
-        # will basicaly show on the browser the uploaded file
-        return render_template('results.html', jsonSent=jsonToSend, message="Wait for it...")
+        return findSimilar(hashValue,imageName=filename)
+        
 
 # This route is expecting a parameter containing the name
 # of a file. Then it will locate that file on the upload

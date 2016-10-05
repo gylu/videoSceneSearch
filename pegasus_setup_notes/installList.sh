@@ -98,23 +98,6 @@ peg service ${CLUSTER_NAME} spark start
 
 ######## Notes about stuff not related to the above 
 
-##Trying to get youtube videos into and out of kafka
-#youtube-dl https://www.youtube.com/playlist?list=PLBDA074E6B463154D | /usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic myVideos
-#/usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic myVideos << youtube-dl https://www.youtube.com/playlist?list=PLBDA074E6B463154D
-
-#Restrict filenames, and ignore errors
-#Download from a url to a folder called videoFiles. Removing spaces from filenames and ignoring errors. Seems to work locally only
-#youtube-dl -i --restrict-filenames -o "videoFiles/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/watch?v=yWyj9ORkj8w
-#into HDFS directly? (doesn't work)
-#youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | hdfs dfs -put - "/videoFiles/%(title)s-%(id)s.%(ext)s"
-#into HDFS directly?
-#youtube-dl -i --restrict-filenames -o "/videoFiles/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/watch?v=yWyj9ORkj8w | hdfs dfs -put - "/videoFiles/%(title)s-%(id)s.%(ext)s"
-#Onto s3?
-#~/playground/videos$ youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | aws s3 mv - s3://videoscenesearch/videoFiles/%(title)s-%(id)s.%(ext)s
-
-#FFmpeg local usage (quality still seems to be smaller image size):
-#./ffmpeg -i Superman_s_True_Power-yWyj9ORkj8w.mp4 -q:v 1 ./frames_superman_ffmpeg/filename%03d.jpg
-
 
 ###############Notes about memory usage############
 #du -sh ~/videos showed 7.4G used

@@ -56,7 +56,7 @@ import imagehash
 
 import pdb
 from kafka import KafkaProducer
-
+import time
 ##
 db_table=0 #global rdd
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
@@ -72,15 +72,6 @@ db_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashval
 will resule in
 [u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
 """
-
-def raw_data_tojson (input):
-    #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
-    print("json input: ", input)
-    output=json.loads(input[1])
-    print("json output: ", output)
-    print("json imgName: ", output['imgName'])
-    print("json hash: ", output['hash'])
-    return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 def main():
     global db_table;
@@ -106,38 +97,67 @@ def main():
     print("hi")
     print("stream fm kafka:", streamFromKafka)
 
-    streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(takeTop) #works once then breaks AttributeError: 'list' object has no attribute '_jrdd'
+    #streamFromKafka.transform(lambda rdd: rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x)))).map(addDistanceInfo).foreachRDD(takeTop) #to do , need to debug this function, this is the original one causing a lot of issues as of 2am on oct 5, 2016
+    #streamFromKafka.foreachRDD(lambda rdd: rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo)) #broken
+    streamFromKafka.foreachRDD(doEverything) #wi think this works similar to the line above, but still super slow, maybe slightly faster than the other one
+
     producer.send('searchReturns',"Hello, producer is working. Time is: " + str(time.time()))
     print("here")
     ssc.start()
     ssc.awaitTermination()
 
 
-#example of output:
+def doEverything(rdd):
+    taken=rdd.take(1)
+    print("take 1 off: ",taken)
+    if taken!=[]:
+        starttime=time.time()
+        print("taken 1 of rdd inside loop: ",taken)
+        print("here0, just inside if stmt: ",time.time()-starttime)
+        temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #this works, but is still super slow
+        #temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #uhhh, this breaks
+        print("here1, after map: ",time.time()-starttime)
+        nothing=temp.take(3)
+        print("here1.5, after take(3): ",time.time()-starttime)
+        framesfound=temp.takeOrdered(3,key=lambda x: (x['distance']))
+        print("here2 after takeOrdered(3): ", time.time()-starttime)
+        producer.send('searchReturns',framesfound)
+        print("here3, after send to kafka: ", time.time()-starttime)
+        sc.parallelize(framesfound).saveToCassandra("vss","queryresults")
+        print("here4, after 1st db write: ", time.time()-starttime)
+        uniqueNames=set(item['videoname'] for item in framesfound)
+        temp.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra("vss","distances")
+        print("here5, after 2nd db write: ", time.time()-starttime)
+
+#example of framesfound:
 #[{'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.08770751953125, 'framehash': '5959a6a6795986a6', 'distance': 4, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1105, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.504791259765625, 'framehash': '5959a6a65959a6a6', 'distance': 6, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1115, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 58.6002082824707, 'framehash': '1999e6e619398ec6', 'distance': 8, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1405, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}]
 #[{"distance": 16, "framenumber": 250, "videoname": "Bunraku_Trailer_HD-jVabHVw4dMc.mp4", "framehash": "8725ec7a7ada1a82", "youtubelink": "www.youtube.com/watch?v=jVabHVw4dMc", "frametime": 10.0, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 1375, "videoname": "New_World_Movie_Clip_RED_BAND-axRTL8yvXtI.mp4", "framehash": "8585f27a78585ad6", "youtubelink": "www.youtube.com/watch?v=axRTL8yvXtI", "frametime": 57.34895706176758, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}, {"distance": 16, "framenumber": 3085, "videoname": "FAST_and_FURIOUS_7_Official_Trailer-KBhXp1gqZRo.mp4", "framehash": "9783407c78f83ada", "youtubelink": "www.youtube.com/watch?v=KBhXp1gqZRo", "frametime": 128.6702117919922, "imagename": "Screen_Shot_2016-09-30_at_3.24.47_AM.png", "targetimagehash": "8568787a787a3a5a"}]
 def takeTop(rdd):
     global producer;
-    framesfound= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra
+    framesfound= rdd.takeOrdered(3,key=lambda x: (x['distance'])) #this is a python list, can't save this to cassandra #making this a take(3) doens't do any better either, so the issue isn't in the takeOrdered
     framesfound=framesfound[:3] #this is to only get 3, even if there are ties
     uniqueNames=set(item['videoname'] for item in framesfound)
-    distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).collect()
-    #distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).map(lambda x:("imagename":x['imagename'],"targetimagehash":x['targetimagehash'],"videoname":x['videoname'],"framenumber":x['framenumber'],"distance":x['distance'],"frametime":x['frametime']) ).collect()
-    #print("output:", output)
+    print("stream job, frames found:", framesfound)
+    print("stream job, output out take top:", uniqueNames)
     #rdd.map(lambda x: set(x['videoname']))
     producer.send('searchReturns',framesfound)
-    sc.parallelize(distancesOfCloseVids).saveToCassandra("vss","distances")
-    sc.parallelize(framesfound).saveToCassandra("vss","queryresults")
-    #return framesfound
+    sc.parallelize(framesfound).saveToCassandra("vss","queryresults") #this doesn't seem to be the bottle neck, as soon as prints happen, I get the frames
+    #distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).collect()
+    #sc.parallelize(distancesOfCloseVids).saveToCassandra("vss","distances")
+    rdd.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra("vss","distances") #this does not seem to be the bottleneck, as soon as prints happen, i get the frames
+    #return framesfound #uncommenting this breaks the hell out of it, that's because foreach rdd isn't supposed to return anything
 
 
 def addDistanceInfo(x):
     #x is of the form (1, ({dict in string format},row()) )
+    print("in stream job, add distance info")
     targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic 
     #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
     rowFromDatabase=x[1][1] #this is the row item
-    distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue'])
+    distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue']) #this does not seem to be the bottleneck, still took long time when I made this constant
     result={'distance':distance,'youtubelink':rowFromDatabase['youtubelink'], 'imagename':targetImageDict['imgName'], "targetimagehash":targetImageDict['hash'], 'framehash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}
+    #print("stream job, add distance info in stream: ", result) #won't work, break
+    #producer.send('searchReturns',"hi") #won't work, breaks
     return result
 
 
@@ -153,11 +173,21 @@ def calcDistStr (targetHashStr, databaseRowHashStr):
             distance=distance-1
     return distance
 
-def printMe(x):
-    return x
 
 if __name__ == '__main__':
   main()
+
+
+# def raw_data_tojson (input):
+#     #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
+#     print("json input: ", input)
+#     output=json.loads(input[1])
+#     print("json output: ", output)
+#     print("json imgName: ", output['imgName'])
+#     print("json hash: ", output['hash'])
+#     return {'imgName':output['imgName'],'imgHash':output['hash']};
+
+
 
 
 """
