@@ -105,8 +105,10 @@ peg service ${CLUSTER_NAME} spark start
 #Restrict filenames, and ignore errors
 #Download from a url to a folder called videoFiles. Removing spaces from filenames and ignoring errors. Seems to work locally only
 #youtube-dl -i --restrict-filenames -o "videoFiles/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/watch?v=yWyj9ORkj8w
-#into HDFS directly?
+#into HDFS directly? (doesn't work)
 #youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | hdfs dfs -put - "/videoFiles/%(title)s-%(id)s.%(ext)s"
+#into HDFS directly?
+#youtube-dl -i --restrict-filenames -o "/videoFiles/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/watch?v=yWyj9ORkj8w | hdfs dfs -put - "/videoFiles/%(title)s-%(id)s.%(ext)s"
 #Onto s3?
 #~/playground/videos$ youtube-dl -i --restrict-filenames -o - https://www.youtube.com/watch?v=yWyj9ORkj8w | aws s3 mv - s3://videoscenesearch/videoFiles/%(title)s-%(id)s.%(ext)s
 

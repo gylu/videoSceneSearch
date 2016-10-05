@@ -16,7 +16,8 @@ sc = SparkContext(conf=conf)
 #hdfsVideoLocation="hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/videos"
 
 public_dns = os.environ["PUBLIC_DNS"]
-hdfsVideoLocation="hdfs://{}:9000/videos".format(public_dns)
+#hdfsVideoLocation="hdfs://{}:9000/videos".format(public_dns)
+hdfsVideoLocation="hdfs://{}:9000/videos_orig".format(public_dns)
 #hdfsVideoLocation="hdfs://ec2-52-11-6-165.us-west-2.compute.amazonaws.com:9000/videos"
 rdd=sc.binaryFiles(hdfsVideoLocation) #question, what's the difference between this and binaryFiles? #Note very wierd bug, when changed to take(5), sc.wholeTextFiles stopped working
 
@@ -57,7 +58,8 @@ def getFrames(inputFile):
             partitionby=bin(hashValueInt).count("1")
             #stringToOutput="videoName: %s, hashValue: %s, frameNumber: %d" % (videoNameOnly, hashValueStr, frameNum)
             youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
-            outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
+            #outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
+            outputDict={"hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
             tempList.append(outputDict)
             #print(outputDict)
         success,image = vidcap.read()
@@ -86,8 +88,8 @@ output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassand
 """"
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-172:7077 \
---executor-memory 8000M \
---driver-memory 8000M \
+--executor-memory 4000M \
+--driver-memory 4000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
