@@ -1,19 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
   <div class="container" >
-    <h3 id="myMessage">
-      Upload an image to search for
-      <br/>
-    </h3> 
+    <h3 id="myMessage"> Upload an image to search for</h3> 
 
     <div id="disappearOnClick">
-    <br>
-  	<form action="upload" method="post" enctype="multipart/form-data">
-  		<input type="file" name="uploadFile"> 
-      <br/>
+      <br>
+    	<form class="container" action="upload" method="post" enctype="multipart/form-data">
+    		<input type="file" name="uploadFile"> 
+        <br/>
 
-  		<input type="submit" value="Upload the Chosen File" onclick="clickedSubmit()">
-  	</form>
+    		<input type="submit" value="Upload the Chosen File" onclick="clickedSubmit()">
+    	</form>
       <br>
       <h3>
       Or choose one from below

@@ -113,21 +113,22 @@ def doEverything(rdd):
     if taken!=[]:
         starttime=time.time()
         print("taken 1 of rdd inside loop: ",taken)
-        print("here0, just inside if stmt: ",time.time()-starttime)
+        print("=====here0, just inside if stmt: ",time.time()-starttime)
         temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #this works, but is still super slow
         #temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #uhhh, this breaks
-        print("here1, after map: ",time.time()-starttime)
+        print("=====here1, after map: ",time.time()-starttime)
         nothing=temp.take(3)
-        print("here1.5, after take(3): ",time.time()-starttime)
+        print("=====here2, after take(): ",time.time()-starttime)
         framesfound=temp.takeOrdered(3,key=lambda x: (x['distance']))
-        print("here2 after takeOrdered(3): ", time.time()-starttime)
+        print("=====here3 after takeOrdered(): ", time.time()-starttime)
         producer.send('searchReturns',framesfound)
-        print("here3, after send to kafka: ", time.time()-starttime)
+        print("=====here4, after send to kafka: ", time.time()-starttime)
         sc.parallelize(framesfound).saveToCassandra("vss","queryresults")
-        print("here4, after 1st db write: ", time.time()-starttime)
+        print("=====here5, after 1st db write: ", time.time()-starttime)
         uniqueNames=set(item['videoname'] for item in framesfound)
         temp.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra("vss","distances")
-        print("here5, after 2nd db write: ", time.time()-starttime)
+        print("=====here6, after 2nd db write: ", time.time()-starttime)
+
 
 #example of framesfound:
 #[{'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.08770751953125, 'framehash': '5959a6a6795986a6', 'distance': 4, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1105, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 46.504791259765625, 'framehash': '5959a6a65959a6a6', 'distance': 6, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1115, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}, {'youtubelink': 'www.youtube.com/watch?v=gHWjwGRlrNo', 'targetimagehash': '5919a6e6791986e6', 'frametime': 58.6002082824707, 'framehash': '1999e6e619398ec6', 'distance': 8, 'videoname': 'MISSION_IMPOSSIBLE_5_Rogue_Nation_Trailer-gHWjwGRlrNo.mp4', 'framenumber': 1405, 'imagename': 'Screen_Shot_2016-09-28_at_9.47.49_PM.png'}]
@@ -148,6 +149,7 @@ def takeTop(rdd):
     #return framesfound #uncommenting this breaks the hell out of it, that's because foreach rdd isn't supposed to return anything
 
 
+
 def addDistanceInfo(x):
     #x is of the form (1, ({dict in string format},row()) )
     print("in stream job, add distance info")
@@ -159,6 +161,7 @@ def addDistanceInfo(x):
     #print("stream job, add distance info in stream: ", result) #won't work, break
     #producer.send('searchReturns',"hi") #won't work, breaks
     return result
+
 
 
 def calcDistStr (targetHashStr, databaseRowHashStr):

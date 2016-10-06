@@ -86,8 +86,7 @@ def home():
 @app.route('/about')
 def about():
     title="VSS"
-    message="work in progress..."
-    return render_template('about.html', title=title, message=message)
+    return render_template('about.html', title=title)
 
 def findSimilar(hashValue,imageName):
     jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
