@@ -96,8 +96,9 @@ def findSimilar(hashValue,imageName):
     print("cql printed: ",cql)    
     cqlresult=0
     cqlresult = session.execute(cql)
-    if !cqlresult:
-        jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
+    jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
+    if not cqlresult:
+
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
     starttime=time.time()
