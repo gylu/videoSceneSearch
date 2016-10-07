@@ -64,7 +64,7 @@ def getallframes():
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
-            if cqlresult.current_rows>2: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
+            if cqlresult.current_rows>3: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
                 break
     for row in cqlresult:
         frameresults.append(row)
@@ -91,13 +91,15 @@ def about():
     return render_template('about.html', title=title)
 
 def findSimilar(hashValue,imageName):
-    jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
-    print("json being sent: ",jsonToSend)
-    producer.send('imgSearchRequests', jsonToSend)
     #cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' ALLOW FILTERING"
     cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"'"
-    print("cql printed: ",cql)
+    print("cql printed: ",cql)    
     cqlresult=0
+    cqlresult = session.execute(cql)
+    if !cqlresult:
+        jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
+        print("json being sent: ",jsonToSend)
+        producer.send('imgSearchRequests', jsonToSend)
     starttime=time.time()
     while True:
         elapsed=time.time()-starttime
@@ -106,7 +108,7 @@ def findSimilar(hashValue,imageName):
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
-            if cqlresult.current_rows>2: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
+            if cqlresult.current_rows>3: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
                 break
     arrayOfResults=[]
     arrayOfYoutubeIDs=[]

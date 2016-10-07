@@ -45,8 +45,8 @@ Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if ex
 #Ways of running this
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-172:7077 \
---executor-memory 12000M \
---driver-memory 12000M \
+--executor-memory 8000M \
+--driver-memory 8000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
