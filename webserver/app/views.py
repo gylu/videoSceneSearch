@@ -64,8 +64,7 @@ def getallframes():
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
-            if cqlresult.current_rows>3: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
-                break
+            break
     for row in cqlresult:
         frameresults.append(row)
         times.append(row.frametime)
@@ -98,26 +97,25 @@ def findSimilar(hashValue,imageName):
     cqlresult = session.execute(cql)
     jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
     if not cqlresult:
-
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
     starttime=time.time()
     while True:
         elapsed=time.time()-starttime
         if int(elapsed)%10==0:
-            print("waiting for cassandra to have query: ", time.time()-starttime)
+            print("querying cassandra for: ",imageName, "time: ", time.time()-starttime)
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
-            if cqlresult.current_rows>3: #this is so that all 3 top results will appear before this returns #this isn't working.. still returning just 1 sometimes
-                break
+            print("cqlresult.current_rows: ", cqlresult.current_rows) #note that cqlresult is an iterator, so you can't
+            break
     arrayOfResults=[]
     arrayOfYoutubeIDs=[]
     arrayOfYoutubeTimes=[]
     for row in cqlresult:
         arrayOfResults.append(row)
         arrayOfYoutubeIDs.append(str(row.youtubelink)[-11:]) #get the youtube video id
-        arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-2) #get the youtube video time, 2 seconds before
+        arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-3) #get the youtube video time, 2 seconds before
     arrayOfResults=arrayOfResults[:3]
     arrayOfYoutubeIDs=arrayOfYoutubeIDs[:3]
     arrayOfYoutubeTimes=arrayOfYoutubeTimes[:3]

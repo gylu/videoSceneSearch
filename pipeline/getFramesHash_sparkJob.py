@@ -17,7 +17,7 @@ import pyspark_cassandra
 conf = SparkConf().setAppName("getFramesHash")
 sc = SparkContext(conf=conf)
 #keyspace="vss"
-keyspace="vss_xlarge"
+keyspace="vss_large"
 
 #logFile = "YOUR_SPARK_HOME/README.md"  # Should be some file on your system #Question, what the hell is this
 #logData = sc.textFile(logFile).cache()

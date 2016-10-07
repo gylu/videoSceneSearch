@@ -45,8 +45,8 @@ CREATE TABLE hval (
 //is it ok to have everything as primary key?
 /////////////////////////////////////////////////////////////////////
 DROP TABLE vname;
-DROP TABLE queryresults;
-DROP TABLE distances;
+
+
 /////////////////////////////////////////////////////////////////////
 
 
@@ -61,7 +61,7 @@ CREATE TABLE vname (
 
 /////////////////////////////////////////////////////////////////////
 
-
+DROP TABLE queryresults;
 CREATE TABLE queryresults (
 	imagename text,
 	targetimagehash text,
@@ -71,12 +71,12 @@ CREATE TABLE queryresults (
 	distance int,
 	frametime float,
 	youtubelink text,
-	PRIMARY KEY (targetimagehash, distance)
+	PRIMARY KEY (targetimagehash, distance, framenumber)
 ) WITH CLUSTERING ORDER BY (distance ASC);
 
 /////////////////////////////////////////////////////////////////////
 
-
+DROP TABLE distances;
 CREATE TABLE distances (
 	imagename text,
 	targetimagehash text,
