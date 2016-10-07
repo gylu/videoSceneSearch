@@ -5,8 +5,19 @@ import pyspark_cassandra
 import time
 import os
 
+import io #question: it seems like none of these would work if I imported them in a different function?
+import sys
+import os
+import numpy as np
+import cv2 #need to install: sudo apt-get install python-opencv
+from PIL import Image #need to install: pip install pillow
+import imagehash #need to install: sudo pip install imagehash
+import pyspark_cassandra
+
 conf = SparkConf().setAppName("getFramesHash")
 sc = SparkContext(conf=conf)
+#keyspace="vss"
+keyspace="vss_xlarge"
 
 #logFile = "YOUR_SPARK_HOME/README.md"  # Should be some file on your system #Question, what the hell is this
 #logData = sc.textFile(logFile).cache()
@@ -15,26 +26,20 @@ sc = SparkContext(conf=conf)
 #rdd=sc.textFile("/Users/gyl/Desktop/insight_projects/test_image_proc/Superman_s_True_Power-yWyj9ORkj8w.mp4")
 #hdfsVideoLocation="hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/videos"
 
+#videoFilePath="/home/ubuntu/playground/fix/videos_fix/JOHN_WICK_Trailer_Keanu_Reeves_-_Action_Movie_-_2014-kuQo4xHqCww.mp4"
+
 public_dns = os.environ["PUBLIC_DNS"]
-#hdfsVideoLocation="hdfs://{}:9000/videos".format(public_dns)
-hdfsVideoLocation="hdfs://{}:9000/videos_orig".format(public_dns)
 #hdfsVideoLocation="hdfs://ec2-52-11-6-165.us-west-2.compute.amazonaws.com:9000/videos"
+#hdfsVideoLocation="hdfs://{}:9000/videos_orig".format(public_dns)
+hdfsVideoLocation="hdfs://{}:9000/videos_long".format(public_dns)
 rdd=sc.binaryFiles(hdfsVideoLocation) #question, what's the difference between this and binaryFiles? #Note very wierd bug, when changed to take(5), sc.wholeTextFiles stopped working
 
 def getFrames(inputFile):
-    import io #question: it seems like none of these would work if I imported them in a different function?
-    import sys
-    import os
-    import numpy as np
-    import cv2 #need to install: sudo apt-get install python-opencv
-    from PIL import Image #need to install: pip install pillow
-    import imagehash #need to install: sudo pip install imagehash
-    import pyspark_cassandra
     videoFilePath=inputFile[0] #sc.wholeTextFiles and sc.binaryFiles have key value pair, with key being name, value being the content
     videoNameOnly = videoFilePath.rsplit('/', 1)[-1] #Split get name part after the last slash
     #videoNameOnly=videonNameOnly.rsplit('.')[0] #Split for part before .mp4
     print("videoNameOnly: ",videoNameOnly)
-    ### Note to self: did not need to do any of the following to write it back to itself ###    
+    ### Note to self: seem to need to do the following to write it back to itself ###    
     videoContent=inputFile[1]
     with open(videoNameOnly, 'wb') as wfile:
         wfile.write(videoContent)
@@ -46,19 +51,19 @@ def getFrames(inputFile):
         frameNum=vidcap.get(1) #gets the frame number
         frameTime=vidcap.get(0)/1000 #gets the frame time, in seconds
         if ((frameNum % 5)==0):
-            #cv2.imwrite("/home/ubuntu/playground/frame%d.jpg" % frameNum, image)     # save frame as JPEG file. This keeps printing "True for some reason"
+            cv2.imwrite("/home/ubuntu/playground/fix/images/jwick_frame%d.jpg" % frameNum, image)     # save frame as JPEG file. This keeps printing "True for some reason"
             #cv2.imwrite("/home/ubuntu/playground/vid_%s_frame%d.jpg" % (videoNameOnly, frameNum), image)     # save frame as JPEG file. This keeps printing "True for some reason"
             #cv2.imwrite("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/frames/vid_%s_frame%d.jpg" % (videoNameOnly, frameNum), image)     #Todo: this still isn't working
             hashValue=imagehash.phash(Image.fromarray(image)) #Note: Image.read wasn't working, so instead using Image.fromarray. http://stackoverflow.com/questions/22906394/numpy-ndarray-object-has-no-attribute-read
             hashValueStr=str(hashValue)
-            hashValueInt=int(hashValueStr,16)
-            s1=bin(hashValueInt)
-            s2=bin(int('aaaaaaaaaaaaaaaa',16))
-            hammingDistBetweenHexA=sum(c1 != c2 for c1, c2 in zip(s1, s2))
-            partitionby=bin(hashValueInt).count("1")
+            # hashValueInt=int(hashValueStr,16)
+            # s1=bin(hashValueInt)
+            # s2=bin(int('aaaaaaaaaaaaaaaa',16))
+            # hammingDistBetweenHexA=sum(c1 != c2 for c1, c2 in zip(s1, s2))
+            # partitionby=bin(hashValueInt).count("1")
             #stringToOutput="videoName: %s, hashValue: %s, frameNumber: %d" % (videoNameOnly, hashValueStr, frameNum)
-            youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
             #outputDict={"partitionby":hammingDistBetweenHexA, "hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
+            youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
             outputDict={"hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
             tempList.append(outputDict)
             #print(outputDict)
@@ -75,9 +80,10 @@ def getFrames(inputFile):
 #rdd.flatMap(getFrames).take(1)
 #rdd.flatMap(getFrames).saveAsTextFile("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/outputExample.txt")
 #rdd.flatMap(getFrames).saveToCassandra("vss","hval") #what worked the first time
-output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
+output=rdd.flatMap(getFrames).saveToCassandra(keyspace,"vname")
+#output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
 #output.saveToCassandra("vss","hval") #thehval table sucks because bad prefix
-output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassandra() results in AttributeError: 'NoneType' object has no attribute 'saveToCassandra'
+#output.saveToCassandra("vss","vname2") #can't do .saveToCassandra().saveToCassandra() results in AttributeError: 'NoneType' object has no attribute 'saveToCassandra'
 #question: got this error: WARN QueuedThreadPool: 1 threads could not be stopped
 
 #for some reason, if i use flatmap, take(4) only does take(1)?
@@ -88,8 +94,8 @@ output.saveToCassandra("vss","vname") #can't do .saveToCassandra().saveToCassand
 """"
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-172:7077 \
---executor-memory 4000M \
---driver-memory 4000M \
+--executor-memory 12000M \
+--driver-memory 12000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
@@ -100,6 +106,13 @@ $SPARK_HOME/bin/spark-submit \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
+
+$SPARK_HOME/bin/pyspark \
+--master spark://ip-172-31-0-172:7077 \
+--executor-memory 12000M \
+--driver-memory 12000M \
+--packages TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 
 $SPARK_HOME/bin/pyspark \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \

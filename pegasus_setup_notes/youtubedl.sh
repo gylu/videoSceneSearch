@@ -11,6 +11,11 @@ youtube-dl -i --restrict-filenames -o "/home/ubuntu/videos_long/%(title)s-%(id)s
 #documentary playlist, 200 movies, some 2hrs long
 youtube-dl -i --restrict-filenames -o "/home/ubuntu/videos_long/%(title)s-%(id)s.%(ext)s" https://www.youtube.com/playlist?list=PLi4lYGGXHIkODAkKFIXtLZpAjMptl-xSl
 
+#john wick:
+youtube-dl -i --restrict-filenames -o "./videos_fix/%(title)s-%(id)s.%(ext)s"https://www.youtube.com/watch?v=kuQo4xHqCww
+#JOHN_WICK_Trailer_Keanu_Reeves_-_Action_Movie_-_2014-kuQo4xHqCww.mp4
+
+
 ##Trying to get youtube videos into and out of kafka
 #youtube-dl https://www.youtube.com/playlist?list=PLBDA074E6B463154D | /usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic myVideos
 

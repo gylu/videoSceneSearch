@@ -28,6 +28,7 @@ rdd.saveToCassandra("test","ages");
 //Create tables 
 CREATE KEYSPACE vss WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
 USE vss;
+/////////////////////////////////////////////////////////////////////
 
 DROP TABLE hval;
 CREATE TABLE hval (
@@ -44,6 +45,11 @@ CREATE TABLE hval (
 //is it ok to have everything as primary key?
 /////////////////////////////////////////////////////////////////////
 DROP TABLE vname;
+DROP TABLE queryresults;
+DROP TABLE distances;
+/////////////////////////////////////////////////////////////////////
+
+
 CREATE TABLE vname (
 	hashvalue text,
 	videoname text,
@@ -55,7 +61,7 @@ CREATE TABLE vname (
 
 /////////////////////////////////////////////////////////////////////
 
-DROP TABLE queryresults;
+
 CREATE TABLE queryresults (
 	imagename text,
 	targetimagehash text,
@@ -65,12 +71,12 @@ CREATE TABLE queryresults (
 	distance int,
 	frametime float,
 	youtubelink text,
-	PRIMARY KEY (targetimagehash, distance, imagename, videoname, framenumber)
+	PRIMARY KEY (targetimagehash, distance)
 ) WITH CLUSTERING ORDER BY (distance ASC);
 
 /////////////////////////////////////////////////////////////////////
 
-DROP TABLE distances;
+
 CREATE TABLE distances (
 	imagename text,
 	targetimagehash text,

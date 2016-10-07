@@ -1,30 +1,3 @@
-#from __future__ import print_function
-"""
-The plan:
-1. Read RDD from cassandra
-2. Search for top 3 matches closest to target image
-3. Pull entire video that each match belongs to
-4. Calculate distance on each frame on the video
-5. Plot distance vs time
-6. Push plots to client
-
-Questions:
-Do I query cassandra through CQL?
-Do I query cassandra through python?
-Or do I get spark to read the cassandra as an RDD first, and then query through spark?
-
-how do i access one rdd from another?
-how do i push the data back to flask, back to the client end?
-what's up with the casandra errors when I start this guy?
-"""
-
-
-
-"""
-Takes requests from kafka, runs spark streaming processing query to get results, then pushes results to cassandra
-Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if exist>
-"""
-
 
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
@@ -57,19 +30,55 @@ import imagehash
 import pdb
 from kafka import KafkaProducer
 import time
-##
+"""
+The plan:
+1. Read RDD from cassandra
+2. Get DStream RDD from kafka
+3. Search for top 3 matches closest to target image by calculating distances on each frame
+4. Pull entire video that each match belongs to
+5. Push plots to client
+6. Have client plot distance vs time
+
+Takes requests from kafka, runs spark streaming processing query to get results, then pushes results to cassandra
+Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if exist>
+
+#Ways of running this
+$SPARK_HOME/bin/spark-submit \
+--master spark://ip-172-31-0-172:7077 \
+--executor-memory 12000M \
+--driver-memory 12000M \
+--packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
+/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+
+#Running on single node
+$SPARK_HOME/bin/spark-submit \
+--executor-memory 8000M \
+--driver-memory 8000M \
+--packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
+TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
+/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+
+#Opening spark shell with cassandra
+$SPARK_HOME/bin/pyspark \
+--packages TargetHolding/pyspark-cassandra:0.3.5 \
+--conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
+"""
+
+
 db_table=0 #global rdd
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
 # Kafka and Spark Streaming specific vars
 batch_interval = 5 #question, why is batch interval of 5 so much better than 3? 3 seemed like needed to wait a long time
 sc = CassandraSparkContext(appName="PythonStreamingVSS") #http://www.slideshare.net/JonHaddad/intro-to-py-spark-and-cassandra
 ssc = StreamingContext(sc, batch_interval)
-
+keyspace="vss_large"
 
 """
 Example usages:
 db_table.select("hashvalue", "partitionby","videoname").map(lambda x: x['hashvalue']).take(3)
-will resule in
+will result in
 [u'6daab6a32cb6b209', u'77a888d7aa2f882b', u'571d23371cc358d5']
 """
 
@@ -83,11 +92,9 @@ def main():
 
 
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
-
-
     #example of what can be done
-    #db_table=sc.cassandraTable("vss","vname") #doesn't work
-    db_table=sc.cassandraTable("vss","vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
+    #db_table=sc.cassandraTable(keyspace,"vname") #doesn't work
+    db_table=sc.cassandraTable(keyspace,"vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
 
     zkQuorum, myTopic = sys.argv[1:]
     # Specify all the nodes you are running Kafka on
@@ -123,10 +130,10 @@ def doEverything(rdd):
         print("=====here3 after takeOrdered(): ", time.time()-starttime)
         producer.send('searchReturns',framesfound)
         print("=====here4, after send to kafka: ", time.time()-starttime)
-        sc.parallelize(framesfound).saveToCassandra("vss","queryresults")
+        sc.parallelize(framesfound).saveToCassandra(keyspace,"queryresults")
         print("=====here5, after 1st db write: ", time.time()-starttime)
         uniqueNames=set(item['videoname'] for item in framesfound)
-        temp.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra("vss","distances")
+        temp.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra(keyspace,"distances")
         print("=====here6, after 2nd db write: ", time.time()-starttime)
 
 
@@ -142,17 +149,17 @@ def takeTop(rdd):
     print("stream job, output out take top:", uniqueNames)
     #rdd.map(lambda x: set(x['videoname']))
     producer.send('searchReturns',framesfound)
-    sc.parallelize(framesfound).saveToCassandra("vss","queryresults") #this doesn't seem to be the bottle neck, as soon as prints happen, I get the frames
+    sc.parallelize(framesfound).saveToCassandra(keyspace,"queryresults") #this doesn't seem to be the bottle neck, as soon as prints happen, I get the frames
     #distancesOfCloseVids=rdd.filter(lambda x: (x['videoname'] in uniqueNames)).collect()
-    #sc.parallelize(distancesOfCloseVids).saveToCassandra("vss","distances")
-    rdd.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra("vss","distances") #this does not seem to be the bottleneck, as soon as prints happen, i get the frames
+    #sc.parallelize(distancesOfCloseVids).saveToCassandra(keyspace,"distances")
+    rdd.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra(keyspace,"distances") #this does not seem to be the bottleneck, as soon as prints happen, i get the frames
     #return framesfound #uncommenting this breaks the hell out of it, that's because foreach rdd isn't supposed to return anything
 
 
 
 def addDistanceInfo(x):
     #x is of the form (1, ({dict in string format},row()) )
-    print("in stream job, add distance info")
+    #print("in stream job, add distance info")
     targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic 
     #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
     rowFromDatabase=x[1][1] #this is the row item
@@ -191,28 +198,3 @@ if __name__ == '__main__':
 #     return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 
-
-
-"""
-$SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-172:7077 \
---executor-memory 8000M \
---driver-memory 8000M \
---packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
-/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
-
-#Running on single node
-$SPARK_HOME/bin/spark-submit \
---executor-memory 2000M \
---driver-memory 2000M \
---packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
-TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
-/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
-
-#Running spark shell with cassandra
-$SPARK_HOME/bin/pyspark \
---packages TargetHolding/pyspark-cassandra:0.3.5 \
---conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
-"""

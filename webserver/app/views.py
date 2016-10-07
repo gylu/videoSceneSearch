@@ -1,7 +1,7 @@
 import os
 import sys
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, stream_with_context, Response, jsonify
-from vss_flask import app
+from app import app
 from werkzeug import secure_filename 
 import pdb
 
@@ -18,13 +18,15 @@ from cassandra.cluster import Cluster #datastax
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
 
 
-app.config['UPLOAD_FOLDER'] = 'vss_flask/static/uploads' # This is the path to the upload directory
+app.config['UPLOAD_FOLDER'] = 'app/static/uploads' # This is the path to the upload directory
 app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'png', 'jpg', 'jpeg', 'gif']) # These are the extension that we are accepting to be uploaded
 app.config['CASSANDRA_NODES'] = ['52.32.192.156','52.32.200.206','54.70.213.12']  # can be a string or list of nodes
 
+keyspace='vss_large'
 #Cassandra cluster using datastax
 cluster = Cluster(app.config['CASSANDRA_NODES'])
-session = cluster.connect('vss')
+#session = cluster.connect('vss_large')
+session = cluster.connect(keyspace)
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -70,7 +72,7 @@ def getallframes():
         distances.append(row.distance)
     #print('result: ',frameresults)
     #print('distances: ',times)
-    #print('result: ',distances)
+    print('got all frames and returning')
     graph=jsonify(times=times,distances=distances)
     return graph
 
@@ -79,7 +81,7 @@ def getallframes():
 @app.route('/')
 def home():
     title = "VSS"
-    listOfImageNames=os.listdir('./vss_flask/static/uploads')
+    listOfImageNames=os.listdir('./app/static/uploads')
     return render_template('home.html', title=title, listOfImageNames=listOfImageNames)
 
 
@@ -92,7 +94,8 @@ def findSimilar(hashValue,imageName):
     jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
     print("json being sent: ",jsonToSend)
     producer.send('imgSearchRequests', jsonToSend)
-    cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' ALLOW FILTERING"
+    #cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' ALLOW FILTERING"
+    cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"'"
     print("cql printed: ",cql)
     cqlresult=0
     starttime=time.time()
@@ -111,7 +114,7 @@ def findSimilar(hashValue,imageName):
     for row in cqlresult:
         arrayOfResults.append(row)
         arrayOfYoutubeIDs.append(str(row.youtubelink)[-11:]) #get the youtube video id
-        arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-2) #get the youtube video id
+        arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-2) #get the youtube video time, 2 seconds before
     arrayOfResults=arrayOfResults[:3]
     arrayOfYoutubeIDs=arrayOfYoutubeIDs[:3]
     arrayOfYoutubeTimes=arrayOfYoutubeTimes[:3]
