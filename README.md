@@ -11,6 +11,7 @@ What this project does:
  * Information about the most similar frames, the video the belong time, and the time of their occurence in the video is returned to the user
  * For the most similar frames, distance similarity against all the frames of the entire video that the closest frame belongs to is also sent back to the user
 
+
 What doesn't work very well:
 * Need to reduce search space. Doing the "all pairs" distance calculation through each row in the existing frames database to find the most similar frame is not scalable. Need to find a way search only a partition and not the whole database
  * Find some way to cluster and partition the database
