@@ -6,6 +6,6 @@ key_name: george-lu
 security_group_ids: sg-6d46ad14
 instance_type: m4.xlarge
 tag_name: george4
-vol_size: 160
+vol_size: 240
 role: master
 use_eips: true

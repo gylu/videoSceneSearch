@@ -27,17 +27,23 @@ peg fetch ${CLUSTER_NAME}
 
 peg install ${CLUSTER_NAME} ssh
 peg install ${CLUSTER_NAME} aws
-peg install ${CLUSTER_NAME} hadoop
 peg install ${CLUSTER_NAME} zookeeper
+peg install ${CLUSTER_NAME} hadoop
+peg install ${CLUSTER_NAME} spark
+peg service ${CLUSTER_NAME} zookeeper start
+peg service ${CLUSTER_NAME} hadoop start
+peg service ${CLUSTER_NAME} spark start
+peg sshcmd-cluster george4 "sudo apt-get install python-opencv"
+peg sshcmd-cluster george4 "sudo pip install pillow"
+peg sshcmd-cluster george4 "sudo pip install imagehash"
+peg sshcmd-cluster george4 "sudo pip install kafka-python"
+
+
 peg install ${CLUSTER_NAME} kafka
 peg install ${CLUSTER_NAME} kafka-manager
-peg install ${CLUSTER_NAME} spark
 peg install ${CLUSTER_NAME} cassandra
-peg service ${CLUSTER_NAME} hadoop start
-peg service ${CLUSTER_NAME} zookeeper start
 peg service ${CLUSTER_NAME} kafka-manager start
 peg service ${CLUSTER_NAME} cassandra start
-peg service ${CLUSTER_NAME} spark start
 
 #george4
 #install hadoop, didn't have to start it
@@ -62,6 +68,8 @@ peg service ${CLUSTER_NAME} spark start
 #On webserver node
 #sudo pip install Flask
 #sudo pip install cassandra-driver
+
+
 
 #Note, refer to here for the kafka-python install
 #http://kafka-python.readthedocs.io/en/master/install.html

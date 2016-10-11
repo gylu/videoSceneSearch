@@ -93,7 +93,7 @@ output=rdd.flatMap(getFrames).saveToCassandra(keyspace,"vname")
 
 """"
 $SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-172:7077 \
+--master spark://ip-172-31-0-173:7077 \
 --executor-memory 12000M \
 --driver-memory 12000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
@@ -108,7 +108,7 @@ $SPARK_HOME/bin/spark-submit \
 /home/ubuntu/pipeline/getFramesHash_sparkJob.py
 
 $SPARK_HOME/bin/pyspark \
---master spark://ip-172-31-0-172:7077 \
+--master spark://ip-172-31-0-173:7077 \
 --executor-memory 12000M \
 --driver-memory 12000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \

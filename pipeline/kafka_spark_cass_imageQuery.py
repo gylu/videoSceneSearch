@@ -44,7 +44,7 @@ Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if ex
 
 #Ways of running this
 $SPARK_HOME/bin/spark-submit \
---master spark://ip-172-31-0-172:7077 \
+--master spark://ip-172-31-0-173:7077 \
 --executor-memory 12000M \
 --driver-memory 12000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
@@ -62,6 +62,7 @@ TargetHolding/pyspark-cassandra:0.3.5 \
 
 #Opening spark shell with cassandra
 $SPARK_HOME/bin/pyspark \
+--master spark://ip-172-31-0-173:7077 \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 """
@@ -93,8 +94,11 @@ def main():
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
     #example of what can be done
     #db_table=sc.cassandraTable(keyspace,"vname") #doesn't work
+    print("about to do map and persist")
     db_table=sc.cassandraTable(keyspace,"vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
-
+    print("about to take")
+    tempTake1=db_table.take(1);
+    print("take 1 of db_table: ", tempTake1)
     zkQuorum, myTopic = sys.argv[1:]
     # Specify all the nodes you are running Kafka on
     kafkaBrokers = {"metadata.broker.list": "52.33.155.170:9092,54.69.1.84:9092,52.41.224.1:9092"}
@@ -110,14 +114,21 @@ def main():
 
 def doEverything(rdd):
     taken=rdd.take(1)
-    print("rdd taken: ",taken)
+    print("rdd taken: ",taken) #('rdd taken: ', [(None, u'{"imgName": "Screen_Shot_2016-10-10_at_11.07.01_PM.png", "hash": "4d63933393239b6c", "time": 1476166026.925404}')])
     if taken!=[]:
         starttime=time.time()
         print("inside if statement with rdd: ",taken)
         print("=====here0, just inside if stmt: ",time.time()-starttime)
-        temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #this works, but is still super slow
-        #temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #uhhh, this breaks
-        #print("=====here1, after map: ",time.time()-starttime)
+        #tempTake2=db_table.map(lambda x: (x,1)).takeOrdered(3, key=lambda x: (x[0]['videoname'])); #this takes about 4 seconds, the query through and takeordered
+        #print("take 2 of db_table videoname: ", tempTake2, ". time: ", time.time()-starttime)        
+        print ("rdd num partitions: ", rdd.getNumPartitions())
+        print ("db table num partitions: ", db_table.getNumPartitions())
+        temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #this works, but is still super slow. ~45sec.
+        #temp=db_table.map(lambda x: (1,x)).join(rdd.coalesce(3).map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
+        #broadcasted=sc.broadcast(rdd.collect())
+        #temp3=db_table.map(lambda x: broadcasted.value[0]).take(1);
+        #print ("temp3: ", temp3)
+        print("=====here1, after map: ",time.time()-starttime)
         framesfound=temp.takeOrdered(30,key=lambda x: (x['distance']))
         seen = set()
         framesfound = [seen.add(obj['videoname']) or obj for obj in framesfound if obj['videoname'] not in seen] #get unique videos only 
@@ -134,15 +145,18 @@ def doEverything(rdd):
 
 
 def addDistanceInfo(x):
-    #x is of the form (1, ({dict in string format},row()) )
-    #print("in stream job, add distance info")
-    targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic 
-    #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
+    #x is of the form (1, ({dict in string format}, row()) ) if I do dstreamRDD.join(movie table)
+    targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic. #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
     rowFromDatabase=x[1][1] #this is the row item
+    ##### Alternative for doing db_table.join(dstream RDD)
+    #x is of the form (1, (row(), {dict in string format}) ) if I do db_table.join(dstream RDD)
+    #targetImageDict=json.loads(x[1][1])
+    #rowFromDatabase=x[1][0]
+    ####
     distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue']) #this does not seem to be the bottleneck, still took long time when I made this constant
     result={'distance':distance,'youtubelink':rowFromDatabase['youtubelink'], 'imagename':targetImageDict['imgName'], "targetimagehash":targetImageDict['hash'], 'framehash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}
     #print("stream job, add distance info in stream: ", result) #won't work, break
-    #producer.send('searchReturns',"hi") #won't work, breaks
+    #producer.send('searchReturns',"hi") #won't work, breaks    
     return result
 
 
@@ -174,3 +188,16 @@ if __name__ == '__main__':
 #     return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 
+# references:
+#regarding how data is recieved by spark 
+#Data is read directly by the executors
+#http://stackoverflow.com/questions/35942148/spark-streaming-data-dissemination-in-kafka-and-textsocket-stream
+#tips about sizing executors
+#http://www.slideshare.net/cloudera/top-5-mistakes-to-avoid-when-writing-apache-spark-applications
+#joining dstream with static RDD. I'm doing the same thing as this. Super slow...
+#https://docs.cloud.databricks.com/docs/latest/databricks_guide/07%20Spark%20Streaming/14%20Joining%20DStreams%20With%20Static%20Datasets.html
+#http://permalink.gmane.org/gmane.comp.lang.scala.spark.user/13195
+#could try something like this for broadcasting an RDD. But this won't work for broadcasting a dstream rdd
+#http://stackoverflow.com/questions/28847962/how-to-join-two-tables-big-and-small-ones-effectively
+#number of partitions spark streaming creates per dstream rdd batch (Ans: about 5 partitions created per second)
+#https://forums.databricks.com/questions/778/how-many-partitions-does-spark-streaming-create-pe.html
