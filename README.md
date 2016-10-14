@@ -1,8 +1,9 @@
-# videoSceneSearch
+# Video Scene Search
+
+[Video Scene Search](https://vss.rocks)
 
 See presentation at http://bit.do/georgelu
 
-# [Video Scene Search](https://vss.rocks)
 
 ## Table of contents
 1. [Introduction](README.md#introduction)
@@ -12,14 +13,13 @@ See presentation at http://bit.do/georgelu
 
 
 ## Introduction 
-[Back to Table of contents](README.md#table-of-contents)
 
-[Video Scene Search](http://vss.rocks) lets you perform an image search for video scenes that are similar. The query is a image and the output consists of video recommendations and time in the video where a similar scene was found.
 
-The contents of this readme can be seen in the [slides here](https://bit.do/georgelu/) and demo [video](tbd).
+[Video Scene Search](http://vss.rocks) lets you perform an image search for video scenes that are similar. The user uploads an image and VSS will return with video recommendations and time in the video where a similar scene was found.
+
+The contents of this readme can be seen as [slides here](https://bit.do/georgelu/). Demo [video](https://www.youtube.com/watch?v=XtXn3fWwENI).
 
 ## Data Pipeline
-[Back to Table of contents](README.md#table-of-contents)
 
 Overview of Pipeline
 * Takes videos stored in HDFS and runs a Spark Batch job on it
@@ -37,21 +37,17 @@ The image below depicts the underlying data pipeline and cluster size.
 ### Data source
 Data source consists of ~8gb of youtube video (mostly trailers), downloaded using the youtube-dl tool.
 
-### Spark Batch Processing
 
-### Spark Streaming
-
-### Data bases
 
 ## Performance
-[Back to Table of contents](README.md#table-of-contents)
 
-Batch Processing: Approx 25minutes to hash frames of ~8gb of videos, at 5 frames per second.
-Stream processing: For new image queries, approximately 50 seconds to return with recommendations
+* Batch Processing: Approx 25minutes to hash frames of ~8gb of videos, at 5 frames per second.
+* Stream processing: For new image queries, approximately 50 seconds to return with recommendations
 Accuracy: Not very good except for black-screen scenes or credit scenes. (Due to hashing algorithm not being very good for describing/fingerprinting image)
 
 
 ## Challenges and Future Improvements
+
 What doesn't work very well:
 * Need to reduce search space. Doing the "all pairs" distance calculation through each row in the existing frames database to find the most similar frame is not scalable. Need to find a way search only a partition and not the whole database
  * Find some way to cluster and partition the database
@@ -66,5 +62,4 @@ What doesn't work very well:
  * Perhaps use Elastic Search instead of using Spark to do the comparison in attempt to search for the most similar image?
  * For the batch phase, be able to distributedly process a single video
 
-
-
+[Back to Table of contents](README.md#table-of-contents)
