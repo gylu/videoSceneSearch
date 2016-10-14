@@ -28,11 +28,28 @@ keyspace="vss_large"
 
 #videoFilePath="/home/ubuntu/playground/fix/videos_fix/JOHN_WICK_Trailer_Keanu_Reeves_-_Action_Movie_-_2014-kuQo4xHqCww.mp4"
 
-public_dns = os.environ["PUBLIC_DNS"]
-#hdfsVideoLocation="hdfs://ec2-52-11-6-165.us-west-2.compute.amazonaws.com:9000/videos"
-#hdfsVideoLocation="hdfs://{}:9000/videos_orig".format(public_dns)
-hdfsVideoLocation="hdfs://{}:9000/videos_long".format(public_dns)
-rdd=sc.binaryFiles(hdfsVideoLocation) #question, what's the difference between this and binaryFiles? #Note very wierd bug, when changed to take(5), sc.wholeTextFiles stopped working
+
+AWS_ACCESS_KEY_ID=os.environ['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY=os.environ['AWS_SECRET_ACCESS_KEY']
+AWS_DEFAULT_REGION=os.environ['AWS_DEFAULT_REGION']
+S3_BUCKET="videoscenesearch"
+S3_FOLDER="videos/"
+
+
+#videoLocation="hdfs://ec2-52-11-6-165.us-west-2.compute.amazonaws.com:9000/videos"
+#public_dns = os.environ["PUBLIC_DNS"]
+#videoLocation="hdfs://{}:9000/videos_orig".format(public_dns)
+#videoLocation="hdfs://{}:9000/videos_long".format(public_dns)
+#videoLocation = "s3a://%s:%s@%s/%s" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET, S3_FOLDER) #No need to do this. Also don't do this, because on public DNS spark UI, it'll appear
+S3_BUCKET="videoscenesearch"
+S3_FOLDER="videos/"
+S3_FOLDER="videos_orig/"
+videoLocation = "s3a://%s/%s" % (S3_BUCKET, S3_FOLDER)
+
+
+rdd=sc.binaryFiles(videoLocation) #question, what's the difference between this and binaryFiles? #Note very wierd bug, when changed to take(5), sc.wholeTextFiles stopped working
+rdd=rdd.repartition(36)
+
 
 def getFrames(inputFile):
     videoFilePath=inputFile[0] #sc.wholeTextFiles and sc.binaryFiles have key value pair, with key being name, value being the content
@@ -51,7 +68,7 @@ def getFrames(inputFile):
         frameNum=vidcap.get(1) #gets the frame number
         frameTime=vidcap.get(0)/1000 #gets the frame time, in seconds
         if ((frameNum % 5)==0):
-            cv2.imwrite("/home/ubuntu/playground/fix/images/jwick_frame%d.jpg" % frameNum, image)     # save frame as JPEG file. This keeps printing "True for some reason"
+            #cv2.imwrite("/home/ubuntu/playground/fix/images/jwick_frame%d.jpg" % frameNum, image)     # save frame as JPEG file. This keeps printing "True for some reason"
             #cv2.imwrite("/home/ubuntu/playground/vid_%s_frame%d.jpg" % (videoNameOnly, frameNum), image)     # save frame as JPEG file. This keeps printing "True for some reason"
             #cv2.imwrite("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/frames/vid_%s_frame%d.jpg" % (videoNameOnly, frameNum), image)     #Todo: this still isn't working
             hashValue=imagehash.phash(Image.fromarray(image)) #Note: Image.read wasn't working, so instead using Image.fromarray. http://stackoverflow.com/questions/22906394/numpy-ndarray-object-has-no-attribute-read
@@ -66,7 +83,7 @@ def getFrames(inputFile):
             youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]
             outputDict={"hashvalue": hashValueStr, "framenumber": frameNum, "videoname": videoNameOnly, "frametime":frameTime, "youtubelink":youtubeLink}
             tempList.append(outputDict)
-            #print(outputDict)
+            print(outputDict)
         success,image = vidcap.read()
     #print(tempList)
     return tempList
@@ -80,6 +97,7 @@ def getFrames(inputFile):
 #rdd.flatMap(getFrames).take(1)
 #rdd.flatMap(getFrames).saveAsTextFile("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/outputExample.txt")
 #rdd.flatMap(getFrames).saveToCassandra("vss","hval") #what worked the first time
+output=rdd.flatMap(getFrames).collect()
 output=rdd.flatMap(getFrames).saveToCassandra(keyspace,"vname")
 #output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
 #output.saveToCassandra("vss","hval") #thehval table sucks because bad prefix
@@ -115,6 +133,8 @@ $SPARK_HOME/bin/pyspark \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 
 $SPARK_HOME/bin/pyspark \
+--executor-memory 12000M \
+--driver-memory 12000M \
 --packages TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12
 """

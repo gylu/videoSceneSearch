@@ -2,7 +2,26 @@
 
 See presentation at http://bit.do/georgelu
 
-What this project does:
+# [Video Scene Search](https://vss.rocks)
+
+## Table of contents
+1. [Introduction](README.md#introduction)
+2. [Data Pipeline](README.md#data-pipeline)
+3. [Performance](README.md#performance)
+4. [Challenges and Future Improvements](README.md#challenges-and-future-improvements)
+
+
+## Introduction 
+[Back to Table of contents](README.md#table-of-contents)
+
+[Video Scene Search](http://vss.rocks) lets you perform an image search for video scenes that are similar. The query is a image and the output consists of video recommendations and time in the video where a similar scene was found.
+
+The contents of this readme can be seen in the [slides here](https://bit.do/georgelu/) and demo [video](tbd).
+
+## Data Pipeline
+[Back to Table of contents](README.md#table-of-contents)
+
+Overview of Pipeline
 * Takes videos stored in HDFS and runs a Spark Batch job on it
  * Spark batch job extracts frames from each video, then hashes each frame, stores it in Cassandra database. A perceptual hash is used
 * Users submit images they want to search for
@@ -11,7 +30,28 @@ What this project does:
  * Information about the most similar frames, the video the belong time, and the time of their occurence in the video is returned to the user
  * For the most similar frames, distance similarity against all the frames of the entire video that the closest frame belongs to is also sent back to the user
 
+The image below depicts the underlying data pipeline and cluster size.
 
+![Alt text](content_for_readme/pipeline.png?raw=true "Pipeline")
+
+### Data source
+Data source consists of ~8gb of youtube video (mostly trailers), downloaded using the youtube-dl tool.
+
+### Spark Batch Processing
+
+### Spark Streaming
+
+### Data bases
+
+## Performance
+[Back to Table of contents](README.md#table-of-contents)
+
+Batch Processing: Approx 25minutes to hash frames of ~8gb of videos, at 5 frames per second.
+Stream processing: For new image queries, approximately 50 seconds to return with recommendations
+Accuracy: Not very good except for black-screen scenes or credit scenes. (Due to hashing algorithm not being very good for describing/fingerprinting image)
+
+
+## Challenges and Future Improvements
 What doesn't work very well:
 * Need to reduce search space. Doing the "all pairs" distance calculation through each row in the existing frames database to find the most similar frame is not scalable. Need to find a way search only a partition and not the whole database
  * Find some way to cluster and partition the database
@@ -22,3 +62,9 @@ What doesn't work very well:
  * Color histogram. Because currently, perceptual hash discards all color information as it only quantifies "image frequency" using discrete cosine transform
  * Try Tensor Flow's trained Inception V3
   * Run Inception v3 on each image to get a vector of detected/recognized objects, then do cosine similarity to compare images. See here: http://stackoverflow.com/questions/34809795/tensorflow-return-similar-images. I briefly attempted this, but it was taking about 5 seconds per image to classify (return the pool_3:0 tensor). Other users online have optimized it to about 1 second per image, but since i have ~400k images, this would still take a hundred hours (about a week), and this project is only 4 weeks long
+* Other thoughts
+ * Perhaps use Elastic Search instead of using Spark to do the comparison in attempt to search for the most similar image?
+ * For the batch phase, be able to distributedly process a single video
+
+
+
