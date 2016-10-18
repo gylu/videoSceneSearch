@@ -97,7 +97,7 @@ def getFrames(inputFile):
 #rdd.flatMap(getFrames).take(1)
 #rdd.flatMap(getFrames).saveAsTextFile("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/outputExample.txt")
 #rdd.flatMap(getFrames).saveToCassandra("vss","hval") #what worked the first time
-output=rdd.flatMap(getFrames).collect()
+#output=rdd.flatMap(getFrames).collect()
 output=rdd.flatMap(getFrames).saveToCassandra(keyspace,"vname")
 #output=rdd.flatMap(getFrames).persist(StorageLevel.MEMORY_ONLY)
 #output.saveToCassandra("vss","hval") #thehval table sucks because bad prefix

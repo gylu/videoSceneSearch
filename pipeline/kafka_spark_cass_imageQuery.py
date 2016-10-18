@@ -45,8 +45,8 @@ Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if ex
 #Ways of running this
 $SPARK_HOME/bin/spark-submit \
 --master spark://ip-172-31-0-173:7077 \
---executor-memory 6000M \
---driver-memory 8000M \
+--executor-memory 12000M \
+--driver-memory 12000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
 /home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
@@ -96,6 +96,7 @@ def main():
     #db_table=sc.cassandraTable(keyspace,"vname") #doesn't work
     print("about to do map and persist")
     db_table=sc.cassandraTable(keyspace,"vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime').persist(StorageLevel.MEMORY_ONLY)
+    db_table.repartition(36)
     print("about to take")
     tempTake1=db_table.take(1);
     print("take 1 of db_table: ", tempTake1)
@@ -123,17 +124,14 @@ def doEverything(rdd):
         #print("take 2 of db_table videoname: ", tempTake2, ". time: ", time.time()-starttime)        
         print ("rdd num partitions: ", rdd.getNumPartitions())
         print ("db table num partitions: ", db_table.getNumPartitions())
-        temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #this works, but is still super slow. ~45sec.
-        #temp=db_table.map(lambda x: (1,x)).join(rdd.coalesce(3).map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
-        #broadcasted=sc.broadcast(rdd.collect())
-        #temp3=db_table.map(lambda x: broadcasted.value[0]).take(1);
-        #print ("temp3: ", temp3)
-        print("=====here1, after map: ",time.time()-starttime)
+        #temp=rdd.map(lambda x: (1,x[1])).join(db_table.map(lambda x: (1,x))).map(addDistanceInfo).cache() #joins small dstream rdd with big table. this works, but is still super slow. ~45sec.
+        temp=db_table.map(lambda x: (1,x)).join(rdd.coalesce(3).map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
+        #print("=====here1, after map: ",time.time()-starttime)
         framesfound=temp.takeOrdered(30,key=lambda x: (x['distance']))
         seen = set()
         framesfound = [seen.add(obj['videoname']) or obj for obj in framesfound if obj['videoname'] not in seen] #get unique videos only 
         framesfound=framesfound[:3] #just get 3 at most
-        print("=====here2 after takeOrdered(): ", time.time()-starttime)
+        #print("=====here2 after takeOrdered(): ", time.time()-starttime)
         producer.send('searchReturns',framesfound)
         #print("=====here3, after send to kafka: ", time.time()-starttime)
         sc.parallelize(framesfound).saveToCassandra(keyspace,"queryresults")
@@ -146,12 +144,12 @@ def doEverything(rdd):
 
 def addDistanceInfo(x):
     #x is of the form (1, ({dict in string format}, row()) ) if I do dstreamRDD.join(movie table)
-    targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic. #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
-    rowFromDatabase=x[1][1] #this is the row item
+    #targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic. #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
+    #rowFromDatabase=x[1][1] #this is the row item
     ##### Alternative for doing db_table.join(dstream RDD)
     #x is of the form (1, (row(), {dict in string format}) ) if I do db_table.join(dstream RDD)
-    #targetImageDict=json.loads(x[1][1])
-    #rowFromDatabase=x[1][0]
+    targetImageDict=json.loads(x[1][1])
+    rowFromDatabase=x[1][0]
     ####
     distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue']) #this does not seem to be the bottleneck, still took long time when I made this constant
     result={'distance':distance,'youtubelink':rowFromDatabase['youtubelink'], 'imagename':targetImageDict['imgName'], "targetimagehash":targetImageDict['hash'], 'framehash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}

@@ -17,7 +17,7 @@ See presentation at http://bit.do/georgelu
 
 [Video Scene Search](http://vss.rocks) lets you perform an image search for video scenes that are similar. The user uploads an image and VSS will return with video recommendations and time in the video where a similar scene was found.
 
-The contents of this readme can be seen as [slides here](https://bit.do/georgelu/). Demo [video](https://www.youtube.com/watch?v=XtXn3fWwENI).
+The contents of this readme can be seen as slides at https://bit.do/georgelu/. Demo [video](https://www.youtube.com/watch?v=XtXn3fWwENI).
 
 ## Data Pipeline
 
@@ -35,15 +35,15 @@ The image below depicts the underlying data pipeline and cluster size.
 ![Alt text](content_for_readme/pipeline.png?raw=true "Pipeline")
 
 ### Data source
-Data source consists of ~8gb of youtube video (mostly trailers), downloaded using the youtube-dl tool.
+Data source consists of ~8gb of youtube videos (mostly trailers, ~12.5hrs of video time), downloaded using the youtube-dl tool.
 
 
 
 ## Performance
 
-* Batch Processing: Approx 25minutes to hash frames of ~8gb of videos, at 5 frames per second.
+* Batch Processing: Approx 38minutes to hash 270,000 frames. (Every 5th frame was hashed)
 * Stream processing: For new image queries, approximately 50 seconds to return with recommendations
-Accuracy: Not very good except for black-screen scenes or credit scenes. (Due to hashing algorithm not being very good for describing/fingerprinting image)
+* Accuracy: Not very good except for black-screen scenes or credit scenes. (Due to perceptual hashing algorithm not being very good for describing/fingerprinting image)
 
 
 ## Challenges and Future Improvements
