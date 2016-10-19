@@ -15,7 +15,7 @@ videoFolder="/Users/gyl/Desktop/insight_projects/godzillaFrames"
 
 #bin sizing. This is the number bins the histogram values are broken into. E.g. hue, which has a value from 0 to 180, would be broken in 8 bins
 #http://stackoverflow.com/questions/24725224/how-to-choose-the-number-of-bins-when-creating-hsv-histogram
-bins = [9, 4, 3]
+bins = [4, 8, 3]
 
 videoFile="/Users/gyl/Desktop/insight_projects/youtubeDLtest/godzilla.mp4"
 videoFile="/Users/gyl/Desktop/insight_projects/test_image_proc/Superman_s_True_Power-yWyj9ORkj8w.mp4"
@@ -65,6 +65,12 @@ indicies_of_most_similar=sorted(range(len(a)), key=lambda i: a[i])[-5:]
 #results of running this in python shell:
 #using a frame screen show of a shrinked and .png version o my frame, it was still able to return the closest result
 #mypic="/Users/gyl/Desktop/insight_projects/test_image_proc/superman_frame5370png.png"
+#using bins = [4,8,3] #using these bins seemed to perform better
 #>>> indicies_of_most_similar
 #[531, 530, 528, 529, 1073]
 #note that index 1073 is my frame 5365 (since i only get the 5th frames). in this index, 1073 is the highest liklihood
+
+#using bins = [8, 4, 3]
+# >>> indicies_of_most_similar=sorted(range(len(a)), key=lambda i: a[i])[-5:]
+# >>> indicies_of_most_similar
+# [676, 677, 678, 1007, 1113]

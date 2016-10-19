@@ -77,6 +77,8 @@ CREATE KEYSPACE vss_hist WITH replication = {'class': 'SimpleStrategy', 'replica
 USE vss_hist;
 
 /////////////////////////////////////////////////////////////////////
+//thoughts on using blob storage vs string storage http://stackoverflow.com/questions/31339150/what-are-the-pros-or-cons-of-storing-json-as-text-vs-blob-in-cassandra
+drop table vname;
 
 CREATE TABLE vname (
 	hashvalue text,
@@ -84,7 +86,7 @@ CREATE TABLE vname (
 	framenumber int,
 	frametime float,
 	youtubelink text,
-	histogramvector blob,
+	histogramvector text,
 	PRIMARY KEY (videoname, framenumber)
 ) WITH CLUSTERING ORDER BY (framenumber ASC);
 
