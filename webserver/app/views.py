@@ -13,6 +13,9 @@ import json
 from kafka import KafkaProducer
 from cassandra.cluster import Cluster #datastax
 
+import cv2 #need to install: sudo apt-get install python-opencv
+import math
+import pickle
 
 #producer = KafkaProducer(bootstrap_servers =  kafka_node_dns + ':9092')
 producer = KafkaProducer(bootstrap_servers = 'ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9092', value_serializer=lambda v: json.dumps(v).encode('ascii'))
@@ -22,7 +25,7 @@ app.config['UPLOAD_FOLDER'] = 'app/static/uploads' # This is the path to the upl
 app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'png', 'jpg', 'jpeg', 'gif']) # These are the extension that we are accepting to be uploaded
 app.config['CASSANDRA_NODES'] = ['52.32.192.156','52.32.200.206','54.70.213.12']  # can be a string or list of nodes
 
-keyspace='vss_large'
+keyspace='vss_hist'
 #Cassandra cluster using datastax
 cluster = Cluster(app.config['CASSANDRA_NODES'])
 #session = cluster.connect('vss_large')
@@ -34,14 +37,6 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 
-@app.route('/_add_numbers')
-def add_numbers():
-    a = request.args.get('a', 0, type=int)
-    b = request.args.get('b', 0, type=int)
-    print("here in add numbers: ", request, "a: ", a,"b: ", b)
-    result=jsonify(result=a + b)
-    print('result: ',result)
-    return result
 
 
 # something like this
@@ -51,16 +46,21 @@ def add_numbers():
 def getallframes():
     videoname = request.args.get('videoname', 0, type=str)
     targetimagehash = request.args.get('targetimagehash', 0, type=str)
-    print("here in _getallframes request: ", request, "videoname: ", videoname,"targetimagehash: ", targetimagehash)
-    #result=jsonify(graph=targetimagehash)
-    cql = "SELECT frametime, distance FROM distances WHERE videoname = '"+videoname+"' and targetimagehash='"+targetimagehash+"'"
+    imagename = request.args.get('imagename', 0, type=str)
+    print("here in _getallframes request: ", request, "videoname: ", videoname,"targetimagehash: ", targetimagehash, "imagename: ", imagename)
+    cql = "SELECT frametime, distance, cosinesimilarity FROM distances WHERE videoname = '"+videoname+"' and targetimagehash='"+targetimagehash+"' and imagename='"+imagename+"'"
     print("cql printed: ",cql)
     #cql = "SELECT * FROM queryresults LIMIT 1"
     cqlresult=0
     frameresults=[]
     times=[]
-    distances=[]
-    while True:
+    hammdistances=[]
+    cosinedistances=[]
+    starttime=time.time()
+    printcounter=0
+    elapsed=0    
+    while elapsed<60:
+        elapsed=time.time()-starttime
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
@@ -68,12 +68,11 @@ def getallframes():
     for row in cqlresult:
         frameresults.append(row)
         times.append(row.frametime)
-        distances.append(row.distance)
-    #print('result: ',frameresults)
-    #print('distances: ',times)
+        hammdistances.append(row.distance)
+        cosinedistances.append(row.cosinesimilarity)
     print('got all frames and returning')
-    graph=jsonify(times=times,distances=distances)
-    return graph
+    graphdata=jsonify(times=times,distances=hammdistances,cosinedistances=cosinedistances)
+    return graphdata
 
 
 #ec2-52-41-224-1.us-west-2.compute.amazonaws.com:80
@@ -89,37 +88,50 @@ def about():
     title="VSS"
     return render_template('about.html', title=title)
 
-def findSimilar(hashValue,imageName):
+def findSimilar(imagename):
     #cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' ALLOW FILTERING"
-    cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"'"
+    filepath=os.path.join(app.config['UPLOAD_FOLDER'], imagename)
+    hashValue=imagehash.phash(Image.open(filepath))
+    image=cv2.imread(filepath)
+    hsvImg = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+    histogram_bins = [4, 8, 3]
+    hist = cv2.calcHist([hsvImg], [0, 1, 2], None, histogram_bins, [0, 180, 0, 256, 0, 256])
+    histflat = cv2.normalize(hist).flatten()
+    histstring=pickle.dumps(histflat)
+    jsonToShow={"imgName":imagename,"hash":str(hashValue),"time":time.time()}    
+    jsonToSend={"imgName":imagename,"hash":str(hashValue),"time":time.time(), "histogramvector":histstring}    
+    cql = "SELECT * FROM queryresults WHERE targetimagehash='"+str(hashValue) +"' and imagename='"+imagename+"'"
     print("cql printed: ",cql)    
     cqlresult=0
     cqlresult = session.execute(cql)
-    jsonToSend={"imgName":imageName,"hash":str(hashValue),"time":time.time()}
     if not cqlresult:
         print("json being sent: ",jsonToSend)
         producer.send('imgSearchRequests', jsonToSend)
     starttime=time.time()
-    while True:
+    printcounter=0
+    elapsed=0
+    while elapsed<600: #allow waiting for 600 seconds for the spark streaming job to finish and write to the database
         elapsed=time.time()-starttime
-        if int(elapsed)%10==0:
-            print("querying cassandra for: ",imageName, "time: ", time.time()-starttime)
+        printcounter=printcounter+1
+        if printcounter==10000: #will print about every 15 seconds
+            printcounter=0
+            print("querying cassandra for: ",imagename, "time: ", elapsed)
         cqlresult = session.execute(cql)
         if cqlresult:
             print("cqlresult: ", cqlresult)
             print("cqlresult.current_rows: ", cqlresult.current_rows) #note that cqlresult is an iterator, so you can't
             break
-    arrayOfResults=[]
+    arrayOfMessages=[]
     arrayOfYoutubeIDs=[]
     arrayOfYoutubeTimes=[]
     for row in cqlresult:
-        arrayOfResults.append(row)
+        arrayOfMessages.append(row)
         arrayOfYoutubeIDs.append(str(row.youtubelink)[-11:]) #get the youtube video id
         arrayOfYoutubeTimes.append(int(float(str(row.frametime)))-3) #get the youtube video time, 2 seconds before
-    arrayOfResults=arrayOfResults[:3]
+    arrayOfMessages=arrayOfMessages[:3]
     arrayOfYoutubeIDs=arrayOfYoutubeIDs[:3]
     arrayOfYoutubeTimes=arrayOfYoutubeTimes[:3]
-    return render_template('results.html', jsonSent=jsonToSend, results=zip(arrayOfResults,arrayOfYoutubeIDs, arrayOfYoutubeTimes), imageName=imageName)
+    return render_template('results.html', jsontoshow=jsonToShow, results=zip(arrayOfMessages,arrayOfYoutubeIDs, arrayOfYoutubeTimes), imagename=imagename)
 
 
 @app.route('/runprovided' , methods=['POST'])
@@ -128,10 +140,7 @@ def runprovided():
     filename=request.form['uploadFile']
     print("request: ",request)
     print("file: ",filename)
-    filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    print("filepath: ", filepath)
-    hashValue=imagehash.phash(Image.open(filepath))
-    return findSimilar(hashValue,imageName=filename)
+    return findSimilar(imagename=filename)
 
 
 # Route that will process the file upload
@@ -151,8 +160,7 @@ def upload():
         print("file: ", file)
         filepath=os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        hashValue=imagehash.phash(Image.open(filepath))
-        return findSimilar(hashValue,imageName=filename)
+        return findSimilar(imagename=filename)
         
 
 # This route is expecting a parameter containing the name

@@ -30,6 +30,8 @@ import imagehash
 import pdb
 from kafka import KafkaProducer
 import time
+import math
+import pickle
 """
 The plan:
 1. Read RDD from cassandra
@@ -40,7 +42,7 @@ The plan:
 6. Have client plot distance vs time
 
 Takes requests from kafka, runs spark streaming processing query to get results, then pushes results to cassandra
-Usage: kafka_spark_cass_imageQuery.py <zk> <kafka topic> <more kafka topic if exist>
+Usage: kafka_spark_cass_image_query_histogram_and_hash.py <zk> <kafka topic> <more kafka topic if exist>
 
 #Ways of running this
 $SPARK_HOME/bin/spark-submit \
@@ -49,7 +51,7 @@ $SPARK_HOME/bin/spark-submit \
 --driver-memory 12000M \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
-/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+/home/ubuntu/pipeline/kafka_spark_cass_image_query_histogram_and_hash.py localhost:2181 imgSearchRequests
 
 #Running on single node
 $SPARK_HOME/bin/spark-submit \
@@ -58,7 +60,7 @@ $SPARK_HOME/bin/spark-submit \
 --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1,\
 TargetHolding/pyspark-cassandra:0.3.5 \
 --conf spark.cassandra.connection.host=52.32.192.156,52.32.200.206,54.70.213.12 \
-/home/ubuntu/pipeline/kafka_spark_cass_imageQuery.py localhost:2181 imgSearchRequests
+/home/ubuntu/pipeline/kafka_spark_cass_image_query_histogram_and_hash.py localhost:2181 imgSearchRequests
 
 #Opening spark shell with cassandra
 $SPARK_HOME/bin/pyspark \
@@ -116,13 +118,17 @@ def doEverything(rdd):
     print("rdd taken: ",taken) #('rdd taken: ', [(None, u'{"imgName": "Screen_Shot_2016-10-10_at_11.07.01_PM.png", "hash": "4d63933393239b6c", "time": 1476166026.925404}')])
     if taken!=[]:
         starttime=time.time()
-        temp=db_table.map(lambda x: (1,x)).join(rdd.coalesce(3).map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
-        framesfound=temp.takeOrdered(30,key=lambda x: (x['distance']))
+        temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
+        print("=====here0: ", time.time()-starttime)
+        framesfound=temp.takeOrdered(30,key=lambda x: (x['cosinesimilarity']))
+        print("=====here1: ", time.time()-starttime)
         seen = set()
-        framesfound = [seen.add(obj['videoname']) or obj for obj in framesfound if obj['videoname'] not in seen] #get unique videos only 
+        framesfound = [seen.add(obj['videoname']) or obj for obj in framesfound if obj['videoname'] not in seen] #get unique videonamess only 
         framesfound=framesfound[:3] #just get 3 at most
+        print("=====here2: ", time.time()-starttime)
         producer.send('searchReturns',framesfound)
         sc.parallelize(framesfound).saveToCassandra(keyspace,"queryresults")
+        print("=====here3: ", time.time()-starttime)
         uniqueNames=set(item['videoname'] for item in framesfound)
         temp.filter(lambda x: (x['videoname'] in uniqueNames)).saveToCassandra(keyspace,"distances")
         print("=====here5, after 2nd db write: ", time.time()-starttime)
@@ -138,13 +144,16 @@ def addDistanceInfo(x):
     targetImageDict=json.loads(x[1][1])
     rowFromDatabase=x[1][0]
     #doing stuff with the histogram
-    histogramvector=pickle.loads(rowFromDatabase['histogramvector'])
-    
+    frameHistVect=pickle.loads(rowFromDatabase['histogramvector'])
+    targetImageHistVect=pickle.loads(targetImageDict['histogramvector'])
+    try:
+        cosineDist=float(1-cosine_similarity(frameHistVect,targetImageHistVect)) #need to caste this to float or else won't work...
+    except:
+        print("something went wrong")
     ####
     distance=calcDistStr(targetImageDict['hash'],rowFromDatabase['hashvalue']) #this does not seem to be the bottleneck, still took long time when I made this constant
-    result={'distance':distance,'youtubelink':rowFromDatabase['youtubelink'], 'imagename':targetImageDict['imgName'], "targetimagehash":targetImageDict['hash'], 'framehash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}
-    #print("stream job, add distance info in stream: ", result) #won't work, break
-    #producer.send('searchReturns',"hi") #won't work, breaks    
+    result={'cosinesimilarity':cosineDist,'distance':distance,'youtubelink':rowFromDatabase['youtubelink'], 'imagename':targetImageDict['imgName'], "targetimagehash":targetImageDict['hash'], 'framehash':rowFromDatabase['hashvalue'] ,"videoname":rowFromDatabase['videoname'], "frametime":rowFromDatabase['frametime'], "framenumber":rowFromDatabase['framenumber']}
+    #print("stream job, add distance info in stream: ", result) #won't work, break 
     return result
 
 
@@ -160,6 +169,17 @@ def calcDistStr (targetHashStr, databaseRowHashStr):
         if a==b:
             distance=distance-1
     return distance
+
+
+def cosine_similarity(v1,v2):
+    "compute cosine similarity of v1 to v2: (v1 dot v2)/{||v1||*||v2||)"
+    sumxx, sumxy, sumyy = 0, 0, 0
+    for i in range(len(v1)):
+        x = v1[i]; y = v2[i]
+        sumxx += x*x
+        sumyy += y*y
+        sumxy += x*y
+    return sumxy/math.sqrt(sumxx*sumyy)
 
 
 if __name__ == '__main__':

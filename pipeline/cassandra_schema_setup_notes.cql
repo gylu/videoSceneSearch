@@ -103,8 +103,8 @@ CREATE TABLE queryresults (
 	frametime float,
 	youtubelink text,
 	cosinesimilarity float,
-	PRIMARY KEY (targetimagehash, cosinesimilarity, framenumber)
-) WITH CLUSTERING ORDER BY (distance ASC);
+	PRIMARY KEY ((targetimagehash, imagename), cosinesimilarity)
+) WITH CLUSTERING ORDER BY (cosinesimilarity ASC);
 
 /////////////////////////////////////////////////////////////////////
 
@@ -118,7 +118,7 @@ CREATE TABLE distances (
 	distance int,
 	frametime float,
 	cosinesimilarity float,
-	PRIMARY KEY (videoname, targetimagehash, frametime)
+	PRIMARY KEY ((videoname, targetimagehash, imagename), frametime)
 );
 
 /////////////////////////////////////////////////////////////////////
@@ -129,24 +129,6 @@ CREATE TABLE distances (
 
 //To note regarding blobs and storing them as hex
 //http://stackoverflow.com/questions/31994880/why-cassandra-cql-query-with-hexadecimal-literal-works-but-textasbinary-does-not
-
-INSERT INTO hval (videoName, partitionby, hashValue, frameNumber) VALUES ('testVidName', 23, 'hashvdalaaaa', 24);
-
-//test on pyspark with cassandra: 
-/*
-import pyspark_cassandra
-rdd=sc.parallelize([{'partitionby':233, 'hashvalue':'asfd', 'videoname':'vidnameeee2', 'framenumber':234}])
-rdd.saveToCassandra('vss','hval')
-*/
-
-SELECT * FROM hval;
-
-cql = "SELECT * FROM queryresults WHERE targetimagehash='095adad95741eacc' ALLOW FILTERING"
-res=session.execute(cql)
-
-
-
-
 
 
 

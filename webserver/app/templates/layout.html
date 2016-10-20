@@ -112,10 +112,12 @@
         var me=$(this)
         videoname=me.attr('videoname')
         targetimagehash=me.attr('targetimagehash')
+        imagename=me.attr('imagename')
         chartcount=me.attr('chartcount')
         $.getJSON('/_getallframes', {
           videoname: videoname,
-          targetimagehash: targetimagehash
+          targetimagehash: targetimagehash,
+          imagename: imagename
         }, function(output) {
           var chart = c3.generate({
               bindto: '#chart__'+chartcount.toString(),
@@ -124,23 +126,34 @@
                   width: 853
               },
               data: {
-                  x: 'x',
-          //        xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
-                  columns: [
-                      ['x'].concat(output.times),
-                      ['data1'].concat(output.distances)
-                  ]
+                x: 'x',
+                //xFormat: '%Y%m%d', // 'xFormat' can be used as custom format of 'x'
+                columns: [
+                  ['x'].concat(output.times),
+                  ['HammingDist_of_hashes'].concat(output.distances),
+                  ['One_minus_cosineSim_of_histograms'].concat(output.cosinedistances)
+                ],
+                axes: {
+                  HammingDist_of_hashes: 'y',
+                  One_minus_cosineSim_of_histograms: 'y2'
+                }
               },
               axis: {
-                  x: {
-                      //type: 'timeseries',
-                      tick: {
-                      //    format: '%S'
-                        // values: [output.times]
-                        fit:true,
-                        rotate:60
-                      }
+                x: {
+                  //type: 'timeseries',
+                  tick: {
+                  //    format: '%S'
+                    // values: [output.times]
+                    fit:true,
+                    rotate:60
                   }
+                },
+                y: {
+                  show: true
+                },
+                y2: {
+                  show: true
+                }
               }
           });
 

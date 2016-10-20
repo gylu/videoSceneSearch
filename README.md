@@ -44,7 +44,7 @@ Data source consists of ~8gb of youtube videos (mostly trailers, ~12.5hrs of vid
 * Batch Processing: Approx 38minutes to hash 270,000 frames. (Every 5th frame was hashed)
 * Stream processing: For new image queries, approximately 50 seconds to return with recommendations
 * Accuracy: Not very good except for black-screen scenes or credit scenes. (Due to perceptual hashing algorithm not being very good for describing/fingerprinting image)
-
+* Took about 198 seconds to find an image when using all-pairs cosine similarity of histograms on a single node
 
 ## Challenges and Future Improvements
 
