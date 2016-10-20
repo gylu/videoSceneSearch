@@ -23,10 +23,10 @@ The contents of this readme can be seen as slides at https://bit.do/georgelu/. D
 
 Overview of Pipeline
 * Takes videos stored in HDFS and runs a Spark Batch job on it
- * Spark batch job extracts frames from each video, then hashes each frame, stores it in Cassandra database. A perceptual hash is used
+ * Spark batch job extracts frames from each video, then for each frame, calculates a hash and a histogram, and stores both in Cassandra
 * Users submit images they want to search for
- * The Flask front end hashes the image, and then attempts to find the most similar image(s) in the existing Cassandra database
- * Similarity is determined by hamming distance
+ * The Flask front end also produces a hash and a histogram for the image, and then attempts to find the most similar image(s) in the existing Cassandra database
+ * Similarity is determined by hamming distance and cosine similarity
  * Information about the most similar frames, the video the belong time, and the time of their occurence in the video is returned to the user
  * For the most similar frames, distance similarity against all the frames of the entire video that the closest frame belongs to is also sent back to the user
 
