@@ -3,7 +3,7 @@
 
 
 
-#For monitoring (needs to be run on seperate nodes):
+#For monitoring:
 /usr/local/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic imgSearchRequests
 
 /usr/local/kafka/bin/kafka-console-consumer.sh --zookeeper localhost:2181 --from-beginning --topic imgSearchRequests

@@ -92,6 +92,7 @@ def main():
         #print("Usage: thisfile.py <zk> <topic>", file=sys.stderr) #i get an error about file=sys.stderr for some reason
         print("Usage: thisfile.py <zk> <topic>")
         exit(-1)
+
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
     print("about to do map and persist")
     db_table=sc.cassandraTable(keyspace,"vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime','histogramvector').persist(StorageLevel.MEMORY_ONLY)
@@ -111,13 +112,13 @@ def main():
     ssc.awaitTermination()
 
 
-#note that foreachRDD actually runs on the drivernode and is really slow. Can't seem to optimize this...
+
 def doEverything(rdd):
     taken=rdd.take(1)
     print("rdd taken: ",taken) #('rdd taken: ', [(None, u'{"imgName": "Screen_Shot_2016-10-10_at_11.07.01_PM.png", "hash": "4d63933393239b6c", "time": 1476166026.925404}')])
     if taken!=[]:
         starttime=time.time()
-        temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).repartition(36).map(addDistanceInfo).cache() #Could've used Union for this i think. Joining big table with small table, works but is STILL super slow. Adding the repartition after the map saved 70 seconds
+        temp=db_table.map(lambda x: (1,x)).join(rdd.map(lambda x: (1,x[1]))).map(addDistanceInfo).cache() #joining big table with small table, works but is STILL super slow. ~45sec
         print("=====here0: ", time.time()-starttime)
         framesfound=temp.takeOrdered(30,key=lambda x: (x['cosinesimilarity']))
         print("=====here1: ", time.time()-starttime)
@@ -135,7 +136,7 @@ def doEverything(rdd):
 
 
 def addDistanceInfo(x):
-    #x is of the form (1, ({dict in string format}, row()) ) if I do dstreamRDD.join(big table).
+    #x is of the form (1, ({dict in string format}, row()) ) if I do dstreamRDD.join(movie table)
     #targetImageDict=json.loads(x[1][0]) #Need to have json.loads. Because print(x[1][0][0]) returns just the { char as a string. #this is the dictionary from the kafka topic. #returns {"imgName": "Kafka.jpeg", "hash": "f1b9094e06b13dce", "time": 1475035317.596829}
     #rowFromDatabase=x[1][1] #this is the row item
     ##### Alternative for doing db_table.join(dstream RDD)
@@ -184,6 +185,15 @@ def cosine_similarity(v1,v2):
 if __name__ == '__main__':
   main()
 
+
+# def raw_data_tojson (input):
+#     #tuple looks like: (None, u'{"imgName": "volleyball_block.jpg", "hash": "17e81e97e01fe815", "time": 1474613689.301628}')
+#     print("json input: ", input)
+#     output=json.loads(input[1])
+#     print("json output: ", output)
+#     print("json imgName: ", output['imgName'])
+#     print("json hash: ", output['hash'])
+#     return {'imgName':output['imgName'],'imgHash':output['hash']};
 
 
 # references:
