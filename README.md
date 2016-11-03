@@ -2,6 +2,7 @@
 
 
 See presentation at http://bit.do/georgelu
+Video of demo at: https://www.youtube.com/watch?v=bSqjk9qmxrU&feature=youtu.be
 
 
 ## Table of contents
