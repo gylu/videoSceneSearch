@@ -1,0 +1,657 @@
+george4 cluster instance type histogram
+   4 m4.xlarge
+
+MASTER NODE:
+    Hostname:   ip-172-31-0-173
+    Public DNS: ec2-54-71-103-243.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-169
+    Public DNS: ec2-52-38-195-64.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-171
+    Public DNS: ec2-52-43-182-176.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-170
+    Public DNS: ec2-52-43-120-245.us-west-2.compute.amazonaws.com
+
+
+
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 4
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:49:59 UTC 2016
+
+  System load:  0.03               Processes:           148
+  Usage of /:   6.0% of 236.10GB   Users logged in:     0
+  Memory usage: 62%                IP address for eth0: 172.31.0.170
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:49:59 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-170:~$ exit
+logout
+Connection to ec2-52-43-120-245.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 3
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Thu Oct 13 05:14:46 UTC 2016
+
+  System load:  0.0                Processes:           126
+  Usage of /:   1.3% of 236.10GB   Users logged in:     0
+  Memory usage: 26%                IP address for eth0: 172.31.0.171
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Thu Oct 13 05:14:48 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-171:~$ exit
+logout
+Connection to ec2-52-43-182-176.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 2
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:48:14 UTC 2016
+
+  System load:  0.0                Processes:           141
+  Usage of /:   5.6% of 236.10GB   Users logged in:     0
+  Memory usage: 55%                IP address for eth0: 172.31.0.169
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Mon Oct 24 23:48:17 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-169:~$ exit
+logout
+Connection to ec2-52-38-195-64.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 1
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:47:51 UTC 2016
+
+  System load:  0.03               Processes:           127
+  Usage of /:   1.2% of 236.10GB   Users logged in:     0
+  Memory usage: 42%                IP address for eth0: 172.31.0.173
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:47:52 2016 from 65.87.19.170
+
+
+
+
+
+===================================
+while running 3 image queries:
+-CPU usage seems to surge to about 25% on two of the nodes
+-20% on one of the node
+-one node stayed at <1%
+
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 4
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:52:21 UTC 2016
+
+  System load:  0.0                Processes:           148
+  Usage of /:   6.0% of 236.10GB   Users logged in:     0
+  Memory usage: 62%                IP address for eth0: 172.31.0.170
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:52:21 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-170:~$ exit
+logout
+Connection to ec2-52-43-120-245.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 3
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:52:36 UTC 2016
+
+  System load:  0.08               Processes:           143
+  Usage of /:   7.0% of 236.10GB   Users logged in:     0
+  Memory usage: 56%                IP address for eth0: 172.31.0.171
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Mon Oct 24 23:52:38 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-171:~$ exit
+logout
+Connection to ec2-52-43-182-176.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 2
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:52:36 UTC 2016
+
+  System load:  0.0                Processes:           141
+  Usage of /:   5.6% of 236.10GB   Users logged in:     0
+  Memory usage: 55%                IP address for eth0: 172.31.0.169
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:52:36 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-169:~$ exit
+logout
+Connection to ec2-52-38-195-64.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george4 1
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:52:51 UTC 2016
+
+  System load:  0.0                Processes:           127
+  Usage of /:   1.2% of 236.10GB   Users logged in:     0
+  Memory usage: 42%                IP address for eth0: 172.31.0.173
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:52:51 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-173:~$
+
+
+
+===================================
+===================================
+===================================
+===================================
+
+
+
+
+
+
+
+
+george-db cluster instance type histogram
+   3 m4.large
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-164
+    Public DNS: ec2-52-32-192-156.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-168
+    Public DNS: ec2-52-32-200-206.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-167
+    Public DNS: ec2-54-70-213-12.us-west-2.compute.amazonaws.com
+
+WARNING: no master found in cluster george-db
+
+
+
+
+
+
+
+
+* Cassandra cluster of 3 m4.large nodes - each node used 40% of RAM (of 8GB RAM per node)
+ * Hard disk usage seemed to be about 2.4Gb used per node (for storing about 300k to 400k rows)
+* Front end cluster of 3 m4.larges were using about 17% of ram on each node, except for the master, which was running 30%
+
+
+
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george-db 1
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:37:47 UTC 2016
+
+  System load:  0.0                Processes:           105
+  Usage of /:   1.0% of 236.10GB   Users logged in:     0
+  Memory usage: 39%                IP address for eth0: 172.31.0.164
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+198 packages can be updated.
+110 updates are security updates.
+
+
+Last login: Mon Oct 24 23:37:48 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-164:~$ exit
+logout
+Connection to ec2-52-32-192-156.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george-db 2
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Wed Oct  5 07:09:36 UTC 2016
+
+  System load:  0.0                Processes:           105
+  Usage of /:   0.9% of 236.10GB   Users logged in:     0
+  Memory usage: 31%                IP address for eth0: 172.31.0.168
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Wed Oct  5 07:09:37 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-168:~$ exit
+logout
+Connection to ec2-52-32-200-206.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george-db 3
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:43:48 UTC 2016
+
+  System load:  0.0                Processes:           105
+  Usage of /:   1.0% of 236.10GB   Users logged in:     0
+  Memory usage: 38%                IP address for eth0: 172.31.0.167
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Mon Oct 24 23:43:49 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-167:~$ exit
+logout
+Connection to ec2-54-70-213-12.us-west-2.compute.amazonaws.com closed.
+
+
+
+
+
+===================================
+===================================
+===================================
+===================================
+
+
+
+
+
+
+
+george3 cluster instance type histogram
+   3 m4.large
+
+MASTER NODE:
+    Hostname:   ip-172-31-0-174
+    Public DNS: ec2-52-41-224-1.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-165
+    Public DNS: ec2-52-33-155-170.us-west-2.compute.amazonaws.com
+
+WORKER NODE:
+    Hostname:   ip-172-31-0-166
+    Public DNS: ec2-54-69-1-84.us-west-2.compute.amazonaws.com
+
+
+
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george3 1
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:45:54 UTC 2016
+
+  System load:  0.0                Processes:           115
+  Usage of /:   7.3% of 157.35GB   Users logged in:     0
+  Memory usage: 29%                IP address for eth0: 172.31.0.174
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+196 packages can be updated.
+110 updates are security updates.
+
+New release '16.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Mon Oct 24 23:45:55 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-174:~$ exit
+logout
+Connection to ec2-52-41-224-1.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george3 2
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:45:38 UTC 2016
+
+  System load:  0.0                Processes:           107
+  Usage of /:   9.3% of 157.35GB   Users logged in:     0
+  Memory usage: 19%                IP address for eth0: 172.31.0.165
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Mon Oct 24 23:45:39 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-165:~$ exit
+logout
+Connection to ec2-52-33-155-170.us-west-2.compute.amazonaws.com closed.
+Georges-MacBook-Pro:d_coding_challenge gyl$ peg ssh george3 3
+Welcome to Ubuntu 14.04.2 LTS (GNU/Linux 3.13.0-48-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Mon Oct 24 23:46:15 UTC 2016
+
+  System load:  0.0                Processes:           107
+  Usage of /:   9.1% of 157.35GB   Users logged in:     0
+  Memory usage: 18%                IP address for eth0: 172.31.0.166
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+197 packages can be updated.
+109 updates are security updates.
+
+
+Last login: Mon Oct 24 23:46:16 2016 from 65.87.19.170
+ubuntu@ip-172-31-0-166:~$ exit
+logout
+Connection to ec2-54-69-1-84.us-west-2.compute.amazonaws.com closed.
+
+
+
+
+
+
+
+
+
+
+
+cqlsh:vss> use vss_hist;
+cqlsh:vss_hist> describe vss_hist;
+
+CREATE KEYSPACE vss_hist WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'}  AND durable_writes = true;
+
+CREATE TABLE vss_hist.distances (
+    videoname text,
+    targetimagehash text,
+    imagename text,
+    frametime float,
+    cosinesimilarity float,
+    distance int,
+    framehash text,
+    framenumber int,
+    PRIMARY KEY ((videoname, targetimagehash, imagename), frametime)
+) WITH CLUSTERING ORDER BY (frametime ASC)
+    AND bloom_filter_fp_chance = 0.01
+    AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+    AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND crc_check_chance = 1.0
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99PERCENTILE';
+
+CREATE TABLE vss_hist.queryresults (
+    targetimagehash text,
+    imagename text,
+    cosinesimilarity float,
+    distance int,
+    framehash text,
+    framenumber int,
+    frametime float,
+    videoname text,
+    youtubelink text,
+    PRIMARY KEY ((targetimagehash, imagename), cosinesimilarity)
+) WITH CLUSTERING ORDER BY (cosinesimilarity ASC)
+    AND bloom_filter_fp_chance = 0.01
+    AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+    AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND crc_check_chance = 1.0
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99PERCENTILE';
+
+CREATE TABLE vss_hist.vname (
+    videoname text,
+    framenumber int,
+    frametime float,
+    hashvalue text,
+    histogramvector text,
+    youtubelink text,
+    PRIMARY KEY (videoname, framenumber)
+) WITH CLUSTERING ORDER BY (framenumber ASC)
+    AND bloom_filter_fp_chance = 0.01
+    AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+    AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND crc_check_chance = 1.0
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99PERCENTILE';
+
+
+
+
+
+
+
+cqlsh> use vss_large
+   ... ;
+cqlsh:vss_large> select count(*) from vname;
+
+ count
+--------
+ 388352
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+cqlsh:vss_large> use vss_long
+             ... ;
+InvalidRequest: code=2200 [Invalid query] message="Keyspace 'vss_long' does not exist"
+cqlsh:vss_large> use vss;
+cqlsh:vss> select count(*) from vname;
+
+ count
+--------
+ 212258
+
+
+
+
+
+
+
+
+ cqlsh:vss_hist> select count(*) from vname;
+
+ count
+--------
+ 261965
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+cqlsh:vss_hist> select count(*) from distances;
+
+ count
+--------
+ 111559
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+cqlsh:vss_hist> select count(*) from queryresults;
+
+ count
+-------
+    53
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+
+
+
+
+other thoughts:
+
+12gb had 400k rows, took 200 seconds with hist
+down to 269k rows, took 150seconds

@@ -1,6 +1,5 @@
 # Video Scene Search
 
-[Video Scene Search](https://vss.rocks)
 
 See presentation at http://bit.do/georgelu
 
