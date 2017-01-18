@@ -1,10 +1,9 @@
 # Video Scene Search
 
 
-See presentation at http://bit.do/georgelu
+The contents of this readme can be seen as [slides](https://docs.google.com/presentation/d/1rA-a1rvw_gEi7a6YRrSMkxz0UoJseJRh3DVxGAiKfzg/edit?usp=sharing).
 
-
-Video of demo at: https://www.youtube.com/watch?v=bSqjk9qmxrU&feature=youtu.be
+Video of demo at: https://www.youtube.com/watch?v=XtXn3fWwENI
 
 
 ## Table of contents
@@ -17,9 +16,8 @@ Video of demo at: https://www.youtube.com/watch?v=bSqjk9qmxrU&feature=youtu.be
 ## Introduction 
 
 
-[Video Scene Search](http://vss.rocks) lets you perform an image search for video scenes that are similar. The user uploads an image and VSS will return with video recommendations and time in the video where a similar scene was found.
+[Video Scene Search] lets you perform an image search for video scenes that are similar. The user uploads an image and VSS will return with video recommendations and time in the video where a similar scene was found.
 
-The contents of this readme can be seen as [slides](https://docs.google.com/presentation/d/1rA-a1rvw_gEi7a6YRrSMkxz0UoJseJRh3DVxGAiKfzg/edit?usp=sharing). Demo [video](https://www.youtube.com/watch?v=XtXn3fWwENI).
 
 ## Data Pipeline
 
