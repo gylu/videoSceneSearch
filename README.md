@@ -3,7 +3,7 @@
 
 The contents of this readme can be seen as [slides](https://docs.google.com/presentation/d/1rA-a1rvw_gEi7a6YRrSMkxz0UoJseJRh3DVxGAiKfzg/edit?usp=sharing).
 
-Video of demo at: https://www.youtube.com/watch?v=XtXn3fWwENI
+Video of demo at: https://youtu.be/bSqjk9qmxrU
 
 
 ## Table of contents
