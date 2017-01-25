@@ -5,6 +5,13 @@ The contents of this readme can be seen as [slides](https://docs.google.com/pres
 
 Video of demo at: https://youtu.be/bSqjk9qmxrU
 
+Home page: 0:05 - https://youtu.be/bSqjk9qmxrU?t=5s
+About page: 0:15 - https://youtu.be/bSqjk9qmxrU?t=15s
+Finding credit scene example: 0:26 - https://youtu.be/bSqjk9qmxrU?t=26s
+Histogram: 0:59 - https://youtu.be/bSqjk9qmxrU?t=59s
+Finding four similar scenes: 1:18 - https://youtu.be/bSqjk9qmxrU?t=1m18s
+Finding red color example: 1:54 - https://youtu.be/bSqjk9qmxrU?t=1m52s
+
 
 ## Table of contents
 1. [Introduction](README.md#introduction)
