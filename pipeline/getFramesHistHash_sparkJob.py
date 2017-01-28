@@ -50,7 +50,7 @@ def getFrames(inputFile):
     while success:
         frameNum=vidcap.get(1) #gets the frame number
         frameTime=vidcap.get(0)/1000 #gets the frame time, in seconds
-        if ((frameNum % 5)==0):
+        if ((frameNum % 5)==0): #gets every 5th frame
             hashValue=imagehash.phash(Image.fromarray(image)) #Note: Image.read wasn't working, so instead using Image.fromarray. http://stackoverflow.com/questions/22906394/numpy-ndarray-object-has-no-attribute-read
             hashValueStr=str(hashValue) 
             youtubeLink='www.youtube.com/watch?v='+videoNameOnly.split('.mp4')[0][-11:] #videoNameOnly.split('-')[-1].split('.mp4')[0] #videoId=str.split('-')[-1].split('.mp4')[0]

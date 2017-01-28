@@ -22,6 +22,7 @@ CREATE TABLE vname (
 
 /////////////////////////////////////////////////////////////////////
 
+
 DROP TABLE queryresults;
 CREATE TABLE queryresults (
 	imagename text,
@@ -37,6 +38,8 @@ CREATE TABLE queryresults (
 
 /////////////////////////////////////////////////////////////////////
 
+//this table stores the distances of a target image against all the frames of a particular video
+
 DROP TABLE distances;
 CREATE TABLE distances (
 	imagename text,
@@ -50,6 +53,21 @@ CREATE TABLE distances (
 );
 
 /////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //this table hval was not needed or used. the original intention was to use it for partitioning based on the hash value. But I ultimatley couldn't figure out a good way to do that.
 
