@@ -94,6 +94,8 @@ def main():
         exit(-1)
     #ssc.checkpoint("hdfs://ec2-52-41-224-1.us-west-2.compute.amazonaws.com:9000/imgSrchRqstCkpts")
     print("about to do map and persist")
+    #see this video about spark-cassandra connector and how spark nodes get data from cassandra nodes
+    #https://academy.datastax.com/resources/how-spark-cassandra-connector-reads-data
     db_table=sc.cassandraTable(keyspace,"vname").select("hashvalue","youtubelink","videoname",'framenumber','frametime','histogramvector').persist(StorageLevel.MEMORY_ONLY)
     db_table.repartition(36)
     print("about to take")
